@@ -1,0 +1,38 @@
+[
+  {
+    "id": "2026-junho",
+    "year": 2026,
+    "month": "Junho",
+    "name": "Junho/2026",
+    "label": "Junho/2026",
+    "spreadsheetId": "INSERIR_ID_DA_PLANILHA_DE_JUNHO",
+    "sheetName": "Respostas ao formulario 1",
+    "description": "Configuracao inicial do acompanhamento pedagogico.",
+    "active": true,
+    "lastUpdated": ""
+  },
+  {
+    "id": "2026-julho",
+    "year": 2026,
+    "month": "Julho",
+    "name": "Julho/2026",
+    "label": "Julho/2026",
+    "spreadsheetId": "INSERIR_ID_DA_PLANILHA_DE_JULHO",
+    "sheetName": "Respostas ao formulario 1",
+    "description": "",
+    "active": false,
+    "lastUpdated": ""
+  },
+  {
+    "id": "2026-agosto",
+    "year": 2026,
+    "month": "Agosto",
+    "name": "Agosto/2026",
+    "label": "Agosto/2026",
+    "spreadsheetId": "INSERIR_ID_DA_PLANILHA_DE_AGOSTO",
+    "sheetName": "Respostas ao formulario 1",
+    "description": "",
+    "active": false,
+    "lastUpdated": ""
+  }
+]

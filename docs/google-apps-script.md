@@ -39,19 +39,21 @@ useMockData: true
 
 ## 4. Cadastrar planilhas mensais
 
-Cada mes fica em `src/config/spreadsheetConfig.js`:
+Use a area `Configurações > Planilhas` dentro da aplicacao para cadastrar novos meses sem alterar arquivos JavaScript. Informe ano, mes, nome amigavel, ID da planilha, nome da aba e marque se a configuracao esta ativa.
+
+A configuracao inicial do projeto fica em `src/config/spreadsheets.json`:
 
 ```js
-export const spreadsheetConfig = [
+[
   {
-    year: 2026,
-    month: 'Junho',
-    label: 'Junho/2026',
-    spreadsheetId: 'ID_DA_PLANILHA',
-    sheetName: 'Respostas ao formulario 1',
-    active: true
+    "year": 2026,
+    "month": "Junho",
+    "label": "Junho/2026",
+    "spreadsheetId": "ID_DA_PLANILHA",
+    "sheetName": "Respostas ao formulario 1",
+    "active": true
   }
-];
+]
 ```
 
 O `spreadsheetId` e a parte da URL da planilha entre `/d/` e `/edit`.
@@ -68,7 +70,7 @@ Nesse caso, o ID e:
 1ABCDEF123456
 ```
 
-Para cadastrar novos meses, adicione outro objeto no array. A interface carrega automaticamente anos e meses ativos.
+Para backup ou migracao, use `Exportar Configuracao` e `Importar Configuracao` na tela administrativa.
 
 ## 5. Parametros enviados ao endpoint
 

@@ -1,7 +1,17 @@
 import './styles/main.css';
 import { isAuthenticated, login, logout } from './auth/auth.js';
-import { spreadsheetConfig } from './config/spreadsheetConfig.js';
 import { fetchResponsesForPeriod } from './services/dataService.js';
+import { renderSpreadsheetAdminPage } from './admin/components/SpreadsheetAdminPage.js';
+import {
+  exportSpreadsheetConfigs,
+  importSpreadsheetConfigs,
+  loadSpreadsheetCache,
+  loadSpreadsheetConfigs,
+  loadSyncLog,
+  removeSpreadsheetConfig,
+  testSpreadsheetConnection,
+  upsertSpreadsheetConfig
+} from './admin/services/spreadsheetAdminService.js';
 import { clearQuestionChart, renderQuestionChart } from './charts/chartRenderer.js';
 import { renderMetricCards } from './components/cards.js';
 import { renderActiveFilters } from './components/activeFilters.js';
@@ -28,7 +38,8 @@ import { buildSmartMessages } from './utils/smartMessages.js';
 import { getDistribution, getLatestTimestamp, getQuestionMetrics } from './utils/statistics.js';
 
 const app = document.querySelector('#app');
-const firstPeriod = spreadsheetConfig.find((item) => item.active !== false) ?? spreadsheetConfig[0];
+let spreadsheetConfigs = loadSpreadsheetConfigs();
+const firstPeriod = spreadsheetConfigs.find((item) => item.active !== false) ?? spreadsheetConfigs[0];
 
 const state = {
   year: firstPeriod?.year ?? new Date().getFullYear(),
@@ -44,9 +55,16 @@ const state = {
 let rows = [];
 let questions = [];
 let updatedAt = '';
+let currentView = 'dashboard';
+let selectedAdminSpreadsheetId = firstPeriod?.id ?? '';
+let lastTestResult = null;
 
 function selectedSpreadsheet() {
-  return spreadsheetConfig.find((item) => item.active !== false && item.year === Number(state.year) && item.month === state.month);
+  return spreadsheetConfigs.find((item) => item.active !== false && item.year === Number(state.year) && item.month === state.month);
+}
+
+function firstActiveSpreadsheet() {
+  return spreadsheetConfigs.find((item) => item.active !== false) ?? spreadsheetConfigs[0];
 }
 
 async function loadData() {
@@ -105,11 +123,154 @@ function runReportAction(action) {
   }
 }
 
+function spreadsheetFromForm(data) {
+  const year = Number(data.get('year'));
+  const month = String(data.get('month') || '').trim();
+  const name = String(data.get('name') || '').trim();
+  const spreadsheetId = String(data.get('spreadsheetId') || '').trim();
+  const sheetName = String(data.get('sheetName') || '').trim();
+
+  if (!year || !month || !name || !spreadsheetId || !sheetName) {
+    throw new Error('Preencha ano, mes, nome, ID da planilha e nome da aba.');
+  }
+
+  const id = String(data.get('id') || `${year}-${month}`)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  return {
+    id,
+    year,
+    month,
+    name,
+    label: name,
+    spreadsheetId,
+    sheetName,
+    description: String(data.get('description') || '').trim(),
+    active: data.get('active') === 'on',
+    lastUpdated: new Date().toISOString()
+  };
+}
+
+function syncSpreadsheetConfigs(nextItems) {
+  spreadsheetConfigs = nextItems;
+  const selected = selectedSpreadsheet() ?? firstActiveSpreadsheet();
+  state.year = selected?.year ?? state.year;
+  state.month = selected?.month ?? state.month;
+  selectedAdminSpreadsheetId = selectedAdminSpreadsheetId || selected?.id || '';
+}
+
+function renderAdminView() {
+  const selectedItem = selectedAdminSpreadsheetId === '__new__'
+    ? null
+    : spreadsheetConfigs.find((item) => item.id === selectedAdminSpreadsheetId) ?? spreadsheetConfigs[0];
+  renderSpreadsheetAdminPage(document.querySelector('#admin-root'), {
+    items: spreadsheetConfigs,
+    cache: loadSpreadsheetCache(),
+    logs: loadSyncLog(),
+    selectedItem,
+    testResult: lastTestResult,
+    onNew: () => {
+      selectedAdminSpreadsheetId = '__new__';
+      lastTestResult = null;
+      renderAdminView();
+    },
+    onSave: handleSaveSpreadsheet,
+    onTest: handleTestSpreadsheet,
+    onEdit: handleEditSpreadsheet,
+    onRemove: handleRemoveSpreadsheet,
+    onExport: exportSpreadsheetConfigs,
+    onImport: handleImportSpreadsheetConfigs,
+    onRefreshDashboard: handleRefreshDashboard
+  });
+}
+
+function showView(view) {
+  currentView = view;
+  document.querySelector('#dashboard-root').hidden = view !== 'dashboard';
+  document.querySelector('#admin-root').hidden = view !== 'admin';
+  document.querySelector('#page-title').textContent = view === 'admin' ? 'Configurações de planilhas' : 'Dashboard pedagogico';
+  if (view === 'admin') renderAdminView();
+  else renderDashboard();
+}
+
+async function handleSaveSpreadsheet(data) {
+  try {
+    const item = spreadsheetFromForm(data);
+    syncSpreadsheetConfigs(upsertSpreadsheetConfig(item));
+    selectedAdminSpreadsheetId = item.id;
+    showStatus('Planilha salva. Meses, filtros e dashboard foram atualizados.', 'success');
+    await reloadDashboardData();
+    showView('admin');
+  } catch (error) {
+    showStatus(error.message || 'Nao foi possivel salvar a planilha.', 'error');
+  }
+}
+
+async function handleTestSpreadsheet(input) {
+  try {
+    const item = input instanceof FormData ? spreadsheetFromForm(input) : input;
+    lastTestResult = await testSpreadsheetConnection(item);
+    selectedAdminSpreadsheetId = item.id;
+    showStatus(lastTestResult.success ? 'Conexao testada com sucesso.' : 'Nao foi possivel acessar esta planilha.', lastTestResult.success ? 'success' : 'error');
+    renderAdminView();
+  } catch (error) {
+    showStatus(error.message || 'Nao foi possivel testar a conexao.', 'error');
+  }
+}
+
+function handleEditSpreadsheet(id) {
+  selectedAdminSpreadsheetId = id;
+  lastTestResult = loadSpreadsheetCache()[id] ?? null;
+  renderAdminView();
+}
+
+async function handleRemoveSpreadsheet(id) {
+  try {
+    if (!window.confirm('Remover esta configuracao de planilha?')) return;
+    syncSpreadsheetConfigs(removeSpreadsheetConfig(id));
+    selectedAdminSpreadsheetId = firstActiveSpreadsheet()?.id ?? spreadsheetConfigs[0]?.id ?? '';
+    showStatus('Configuracao removida.', 'success');
+    await reloadDashboardData();
+    showView('admin');
+  } catch (error) {
+    showStatus(error.message || 'Nao foi possivel remover a planilha.', 'error');
+  }
+}
+
+async function handleImportSpreadsheetConfigs(file) {
+  if (!file) return;
+  try {
+    syncSpreadsheetConfigs(await importSpreadsheetConfigs(file));
+    selectedAdminSpreadsheetId = firstActiveSpreadsheet()?.id ?? spreadsheetConfigs[0]?.id ?? '';
+    showStatus('Configuracao importada com sucesso.', 'success');
+    await reloadDashboardData();
+    showView('admin');
+  } catch (error) {
+    showStatus(error.message || 'Nao foi possivel importar a configuracao.', 'error');
+  }
+}
+
+async function handleRefreshDashboard() {
+  try {
+    const item = selectedSpreadsheet() ?? firstActiveSpreadsheet();
+    if (item) lastTestResult = await testSpreadsheetConnection(item);
+    await reloadDashboardData();
+    showStatus('Dados atualizados sem reiniciar a aplicacao.', 'success');
+    if (currentView === 'admin') renderAdminView();
+  } catch (error) {
+    showStatus(error.message || 'Nao foi possivel atualizar os dados.', 'error');
+  }
+}
+
 async function updateState(key, value) {
   state[key] = value;
 
   if (key === 'year') {
-    const firstMonth = spreadsheetConfig.find((item) => item.active !== false && item.year === Number(value));
+    const firstMonth = spreadsheetConfigs.find((item) => item.active !== false && item.year === Number(value));
     state.month = firstMonth?.month ?? '';
   }
 
@@ -269,7 +430,7 @@ function renderDashboard() {
     }),
     onClearFilters: clearDashboardFilters
   });
-  renderFilters(document.querySelector('#filters'), state, rows, questions, updateState);
+  renderFilters(document.querySelector('#filters'), state, rows, questions, updateState, spreadsheetConfigs);
   renderActiveFilters(document.querySelector('#active-filters'), state, question);
   renderMetricCards(document.querySelector('#metrics'), smartIndicators);
   renderQuestionAnalysis(filteredRows);
@@ -298,12 +459,16 @@ async function reloadDashboardData() {
 }
 
 async function startDashboard() {
-  renderShell(app, () => {
-    logout();
-    startLogin();
+  renderShell(app, {
+    onLogout: () => {
+      logout();
+      startLogin();
+    },
+    onNavigate: showView
   });
 
   await reloadDashboardData();
+  showView('dashboard');
 }
 
 function startLogin() {

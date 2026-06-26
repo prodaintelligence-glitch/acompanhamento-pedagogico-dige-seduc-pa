@@ -1,12 +1,11 @@
-﻿import { spreadsheetConfig } from '../config/spreadsheetConfig.js';
 import { getUniqueOptions } from '../utils/filters.js';
 
 function options(items, selected = '') {
   return ['<option value="">Todos</option>', ...items.map((item) => `<option value="${item}" ${item === selected ? 'selected' : ''}>${item}</option>`)].join('');
 }
 
-export function renderFilters(container, state, rows, questions, onChange) {
-  const availablePeriods = spreadsheetConfig.filter((item) => item.active !== false);
+export function renderFilters(container, state, rows, questions, onChange, periods = []) {
+  const availablePeriods = periods.filter((item) => item.active !== false);
   const years = [...new Set(availablePeriods.map((item) => item.year))];
   const months = availablePeriods.filter((item) => item.year === Number(state.year));
   const sections = [...new Set(questions.map((question) => question.section))];

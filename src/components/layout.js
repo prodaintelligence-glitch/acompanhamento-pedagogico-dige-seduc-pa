@@ -27,7 +27,7 @@ export function renderLogin(container, onSubmit) {
   });
 }
 
-export function renderShell(container, onLogout) {
+export function renderShell(container, { onLogout, onNavigate }) {
   container.innerHTML = `
     <div class="app-shell">
       <aside class="sidebar">
@@ -36,8 +36,8 @@ export function renderShell(container, onLogout) {
           <div><strong>Acompanhamento Pedagogico</strong><span>DIGE/SEDUC-PA</span></div>
         </div>
         <nav>
-          <a href="#dashboard" class="active"><i data-lucide="table-2"></i>Dashboard</a>
-          <a href="#abertas"><i data-lucide="search"></i>Perguntas abertas</a>
+          <button type="button" class="nav-link active" data-view="dashboard"><i data-lucide="table-2"></i>Dashboard</button>
+          <button type="button" class="nav-link" data-view="admin"><i data-lucide="search"></i>Configurações › Planilhas</button>
           <a href="#exportacoes"><i data-lucide="file-down"></i>Exportacoes</a>
         </nav>
         <button class="logout-button" type="button"><i data-lucide="log-out"></i>Sair</button>
@@ -46,48 +46,51 @@ export function renderShell(container, onLogout) {
         <header class="page-header">
           <div>
             <p class="eyebrow">Analise mensal</p>
-            <h1>Dashboard pedagogico</h1>
+            <h1 id="page-title">Dashboard pedagogico</h1>
           </div>
           <span class="institutional-mark">DIGE/SEDUC-PA</span>
         </header>
         <section id="status-message" class="status-message" hidden></section>
-        <section id="analysis-breadcrumb"></section>
-        <section id="report-actions"></section>
-        <section id="metrics" class="metrics-grid"></section>
-        <section id="filters" class="filters-grid"></section>
-        <section id="active-filters"></section>
-        <section class="panel question-panel">
-          <div class="panel-header">
-            <div>
-              <p class="eyebrow">Pergunta selecionada</p>
-              <h2 id="question-title"></h2>
-              <span id="question-context"></span>
+        <section id="admin-root" hidden></section>
+        <section id="dashboard-root">
+          <section id="analysis-breadcrumb"></section>
+          <section id="report-actions"></section>
+          <section id="metrics" class="metrics-grid"></section>
+          <section id="filters" class="filters-grid"></section>
+          <section id="active-filters"></section>
+          <section class="panel question-panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Pergunta selecionada</p>
+                <h2 id="question-title"></h2>
+                <span id="question-context"></span>
+              </div>
+              <span id="question-count"></span>
             </div>
-            <span id="question-count"></span>
-          </div>
-          <div id="question-info" class="question-info-grid"></div>
-          <div id="question-metrics" class="question-metrics"></div>
-        </section>
-        <section id="smart-messages"></section>
-        <section class="analysis-grid">
-          <article class="panel chart-panel">
-            <div class="panel-header"><div><p class="eyebrow">Grafico automatico</p><h2>Visualizacao das respostas</h2></div></div>
-            <div class="chart-wrap">
-              <canvas id="question-chart"></canvas>
-              <p class="chart-message" hidden></p>
-            </div>
-            <div id="text-answers" class="text-answers" hidden></div>
-          </article>
-          <article class="panel">
-            <div class="panel-header"><div><p class="eyebrow">Distribuicao</p><h2>Resumo das respostas</h2></div></div>
-            <div id="summary-table" class="table-scroll"></div>
-          </article>
-        </section>
-        <section class="dashboard-lower-grid">
-          <article class="panel">
-            <div id="detail-table"></div>
-          </article>
-          <aside id="statistical-panel" class="panel"></aside>
+            <div id="question-info" class="question-info-grid"></div>
+            <div id="question-metrics" class="question-metrics"></div>
+          </section>
+          <section id="smart-messages"></section>
+          <section class="analysis-grid">
+            <article class="panel chart-panel">
+              <div class="panel-header"><div><p class="eyebrow">Grafico automatico</p><h2>Visualizacao das respostas</h2></div></div>
+              <div class="chart-wrap">
+                <canvas id="question-chart"></canvas>
+                <p class="chart-message" hidden></p>
+              </div>
+              <div id="text-answers" class="text-answers" hidden></div>
+            </article>
+            <article class="panel">
+              <div class="panel-header"><div><p class="eyebrow">Distribuicao</p><h2>Resumo das respostas</h2></div></div>
+              <div id="summary-table" class="table-scroll"></div>
+            </article>
+          </section>
+          <section class="dashboard-lower-grid">
+            <article class="panel">
+              <div id="detail-table"></div>
+            </article>
+            <aside id="statistical-panel" class="panel"></aside>
+          </section>
         </section>
       </main>
     </div>
@@ -95,6 +98,12 @@ export function renderShell(container, onLogout) {
 
   createIcons({ icons: { BarChart3, FileDown, LogOut, Printer, Search, Table2 } });
   container.querySelector('.logout-button').addEventListener('click', onLogout);
+  container.querySelectorAll('[data-view]').forEach((button) => {
+    button.addEventListener('click', () => {
+      container.querySelectorAll('[data-view]').forEach((item) => item.classList.toggle('active', item === button));
+      onNavigate(button.dataset.view);
+    });
+  });
 }
 
 export function showStatus(message, type = 'info') {

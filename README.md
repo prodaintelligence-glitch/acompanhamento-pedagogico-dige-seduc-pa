@@ -44,7 +44,8 @@ Use `useMockData: true` para desenvolvimento local. Para ler planilhas reais, pu
 
 ## Configuracoes principais
 
-- `src/config/spreadsheetConfig.js`: mapeia ano/mes para `spreadsheetId`, `sheetName`, rotulo e status ativo.
+- `src/config/spreadsheets.json`: configuracao inicial das planilhas mensais.
+- `Configurações > Planilhas`: area administrativa para cadastrar, testar, importar e exportar planilhas sem alterar codigo.
 - `src/config/ignoredQuestions.js`: lista perguntas de navegacao que nao entram nas analises.
 - `src/config/appConfig.js`: configura credenciais locais, modo mock e endpoint do Apps Script.
 
@@ -101,3 +102,11 @@ O dashboard foi evoluido para funcionar como ambiente de investigacao dos dados.
 Os indicadores gerais respondem aos filtros e incluem total de respostas, escolas, municipios, DREs, perguntas respondidas, maior indice positivo, maior indice negativo, pergunta com mais respostas em branco e ultima atualizacao. Ao selecionar uma pergunta, o sistema calcula respostas validas, respostas em branco, categorias, moda, frequencia absoluta e relativa, escolas, municipios e DREs participantes.
 
 O drill-down destaca a categoria selecionada, mostra quantidade e percentual de registros, lista os filtros ativos e permite pesquisa instantanea por DRE, municipio, escola e resposta. As tabelas continuam ordenaveis e o dashboard usa cache simples para evitar recalculos desnecessarios ao alternar filtros e perguntas.
+
+## Administracao de planilhas
+
+A area `Configurações > Planilhas` permite cadastrar novas planilhas mensais pela interface. O administrador informa ano, mes, nome amigavel, ID da planilha Google, nome da aba, descricao opcional e status ativo.
+
+As configuracoes iniciais ficam em `src/config/spreadsheets.json`. Durante o uso da aplicacao, alteracoes feitas pela interface sao persistidas no armazenamento local do navegador e podem ser salvas/restauradas pelos botoes `Exportar Configuracao` e `Importar Configuracao`.
+
+O modulo administrativo tambem permite testar conexao com o Google Apps Script, atualizar dados sem reiniciar a aplicacao, visualizar monitor de integridade, historico de sincronizacoes e a identificacao automatica de perguntas, eixos, perguntas abertas/fechadas e categorias encontradas.

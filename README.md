@@ -93,3 +93,11 @@ O dashboard possui acoes contextuais para exportar Excel, gerar PDF, imprimir e 
 A exportacao Excel gera um arquivo `.xlsx` com abas para dados filtrados, drill-down, distribuicao, resumo executivo e filtros aplicados. Quando a pergunta selecionada for aberta, tambem inclui uma aba de respostas abertas.
 
 O PDF inclui titulo, periodo, data de geracao, filtros aplicados, resumo executivo, pergunta selecionada, distribuicao das respostas e uma amostra da tabela de drill-down ou respostas abertas. A impressao usa um visual proprio, ocultando menu lateral, botoes e controles interativos.
+
+## Experiencia analitica do dashboard
+
+O dashboard foi evoluido para funcionar como ambiente de investigacao dos dados. A tela agora exibe breadcrumb da analise, filtros ativos em destaque, indicadores inteligentes, cards informativos da pergunta selecionada, mensagens automaticas e painel estatistico lateral.
+
+Os indicadores gerais respondem aos filtros e incluem total de respostas, escolas, municipios, DREs, perguntas respondidas, maior indice positivo, maior indice negativo, pergunta com mais respostas em branco e ultima atualizacao. Ao selecionar uma pergunta, o sistema calcula respostas validas, respostas em branco, categorias, moda, frequencia absoluta e relativa, escolas, municipios e DREs participantes.
+
+O drill-down destaca a categoria selecionada, mostra quantidade e percentual de registros, lista os filtros ativos e permite pesquisa instantanea por DRE, municipio, escola e resposta. As tabelas continuam ordenaveis e o dashboard usa cache simples para evitar recalculos desnecessarios ao alternar filtros e perguntas.

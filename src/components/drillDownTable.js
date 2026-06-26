@@ -10,11 +10,18 @@ function destroyGrid() {
   }
 }
 
-export function renderDrillDownTable(container, { rows, question, answer, onClear }) {
+function renderFilterSummary(filters = {}) {
+  const visible = Object.entries(filters).filter(([, value]) => value && !['Todos', 'Todas'].includes(value));
+  if (!visible.length) return '<span class="muted-text">Sem filtros adicionais.</span>';
+  return visible.map(([key, value]) => `<span class="filter-chip">${key}: ${value}</span>`).join('');
+}
+
+export function renderDrillDownTable(container, { rows, question, answer, totalRows = rows.length, filters = {}, onClear }) {
   destroyGrid();
 
   const title = answer ? `Registros com resposta: ${answer}` : 'Registros detalhados';
   const description = question ? `${question.code} - ${question.title}` : 'Nenhuma pergunta selecionada';
+  const percent = totalRows ? Math.round((rows.length / totalRows) * 100) : 0;
 
   container.innerHTML = `
     <div class="drill-header">
@@ -22,10 +29,12 @@ export function renderDrillDownTable(container, { rows, question, answer, onClea
         <p class="eyebrow">Drill-down</p>
         <h2>${title}</h2>
         <span>${description}</span>
+        <div class="drill-filter-summary">${renderFilterSummary(filters)}</div>
       </div>
       <div class="drill-actions">
         <strong>${rows.length} registros</strong>
-        <button id="clear-drill" class="secondary-button compact-button" type="button" ${answer ? '' : 'hidden'}>Limpar selecao</button>
+        <span class="drill-percent">${percent}% do filtro atual</span>
+        <button id="clear-drill" class="secondary-button compact-button" type="button" ${answer ? '' : 'hidden'}>Limpar Drill-down</button>
       </div>
     </div>
     <div id="drill-grid" class="table-scroll"></div>
@@ -39,7 +48,7 @@ export function renderDrillDownTable(container, { rows, question, answer, onClea
   }
 
   drillGrid = new Grid({
-    search: false,
+    search: true,
     sort: true,
     pagination: { limit: 8 },
     columns: ['DRE', 'Municipio', 'Escola', 'Resposta'],

@@ -11,9 +11,10 @@ const palette = [
   '#65a30d'
 ];
 
-export function buildChartData({ distribution }) {
+export function buildChartData({ distribution, chartConfig = {} }) {
   const labels = Object.keys(distribution);
   const values = Object.values(distribution);
+  const selectedAnswer = chartConfig.selectedAnswer;
 
   return {
     labels,
@@ -21,9 +22,9 @@ export function buildChartData({ distribution }) {
       {
         label: 'Respostas',
         data: values,
-        backgroundColor: labels.map((_, index) => palette[index % palette.length]),
-        borderColor: '#ffffff',
-        borderWidth: 2,
+        backgroundColor: labels.map((label, index) => selectedAnswer && label !== selectedAnswer ? '#cbd5e1' : palette[index % palette.length]),
+        borderColor: labels.map((label) => label === selectedAnswer ? '#0f172a' : '#ffffff'),
+        borderWidth: labels.map((label) => label === selectedAnswer ? 4 : 2),
         borderRadius: 6
       }
     ]

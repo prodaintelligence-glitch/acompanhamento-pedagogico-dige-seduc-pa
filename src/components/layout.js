@@ -51,9 +51,11 @@ export function renderShell(container, onLogout) {
           <span class="institutional-mark">DIGE/SEDUC-PA</span>
         </header>
         <section id="status-message" class="status-message" hidden></section>
+        <section id="analysis-breadcrumb"></section>
         <section id="report-actions"></section>
         <section id="metrics" class="metrics-grid"></section>
         <section id="filters" class="filters-grid"></section>
+        <section id="active-filters"></section>
         <section class="panel question-panel">
           <div class="panel-header">
             <div>
@@ -63,8 +65,10 @@ export function renderShell(container, onLogout) {
             </div>
             <span id="question-count"></span>
           </div>
+          <div id="question-info" class="question-info-grid"></div>
           <div id="question-metrics" class="question-metrics"></div>
         </section>
+        <section id="smart-messages"></section>
         <section class="analysis-grid">
           <article class="panel chart-panel">
             <div class="panel-header"><div><p class="eyebrow">Grafico automatico</p><h2>Visualizacao das respostas</h2></div></div>
@@ -79,8 +83,11 @@ export function renderShell(container, onLogout) {
             <div id="summary-table" class="table-scroll"></div>
           </article>
         </section>
-        <section class="panel">
-          <div id="detail-table"></div>
+        <section class="dashboard-lower-grid">
+          <article class="panel">
+            <div id="detail-table"></div>
+          </article>
+          <aside id="statistical-panel" class="panel"></aside>
         </section>
       </main>
     </div>

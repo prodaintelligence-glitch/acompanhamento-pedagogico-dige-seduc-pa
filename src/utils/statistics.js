@@ -14,6 +14,11 @@ export function getQuestionMetrics(rows, questionKey, distribution) {
   const categoryEntries = Object.entries(distribution).filter(([label]) => label !== EMPTY_LABEL);
   const [topCategory = 'Nao informado', topCount = 0] = categoryEntries.sort((a, b) => b[1] - a[1])[0] ?? [];
   const topPercent = validCount ? Math.round((topCount / validCount) * 100) : 0;
+  const categoryStats = categoryEntries.map(([label, count]) => ({
+    label,
+    count,
+    percent: validCount ? Math.round((count / validCount) * 100) : 0
+  }));
 
   return {
     total: rows.length,
@@ -22,7 +27,11 @@ export function getQuestionMetrics(rows, questionKey, distribution) {
     categoryCount: categoryEntries.length,
     topCategory,
     topCount,
-    topPercent
+    topPercent,
+    categoryStats,
+    schoolCount: new Set(rows.filter((row) => !isBlankAnswer(row[questionKey])).map((row) => row.escola).filter(Boolean)).size,
+    municipalityCount: new Set(rows.filter((row) => !isBlankAnswer(row[questionKey])).map((row) => row.municipio).filter(Boolean)).size,
+    dreCount: new Set(rows.filter((row) => !isBlankAnswer(row[questionKey])).map((row) => row.dre).filter(Boolean)).size
   };
 }
 

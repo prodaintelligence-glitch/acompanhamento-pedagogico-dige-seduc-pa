@@ -3,11 +3,16 @@ import { isAuthenticated, login, logout } from './auth/auth.js';
 import { spreadsheetConfig } from './config/spreadsheetConfig.js';
 import { fetchResponsesForPeriod } from './services/dataService.js';
 import { clearQuestionChart, renderQuestionChart } from './charts/chartRenderer.js';
-import { buildMetrics, renderMetricCards } from './components/cards.js';
+import { renderMetricCards } from './components/cards.js';
+import { renderActiveFilters } from './components/activeFilters.js';
+import { renderAnalysisBreadcrumb } from './components/analysisBreadcrumb.js';
 import { renderDrillDownTable } from './components/drillDownTable.js';
 import { renderFilters } from './components/filters.js';
 import { renderLogin, renderShell, showStatus } from './components/layout.js';
+import { renderQuestionInfoCards } from './components/questionInfoCards.js';
 import { renderReportActions } from './components/reportActions.js';
+import { renderSmartMessages } from './components/smartMessages.js';
+import { renderStatisticalPanel } from './components/statisticalPanel.js';
 import { renderSummaryTable, renderTextAnswers } from './components/table.js';
 import { exportReportToExcel } from './reports/exportExcel.js';
 import { exportReportToPdf } from './reports/exportPdf.js';
@@ -17,6 +22,9 @@ import { detectBestChartType } from './utils/chartTypeDetector.js';
 import { detectQuestions, detectQuestionType } from './utils/detectQuestions.js';
 import { applyFilters } from './utils/filters.js';
 import { normalizeAnswer } from './utils/normalizeAnswers.js';
+import { clearAnalysisCache, createCacheKey, getCachedCalculation } from './utils/analysisCache.js';
+import { buildSmartIndicators } from './utils/smartIndicators.js';
+import { buildSmartMessages } from './utils/smartMessages.js';
 import { getDistribution, getLatestTimestamp, getQuestionMetrics } from './utils/statistics.js';
 
 const app = document.querySelector('#app');
@@ -43,6 +51,7 @@ function selectedSpreadsheet() {
 
 async function loadData() {
   const result = await fetchResponsesForPeriod(selectedSpreadsheet());
+  clearAnalysisCache();
   rows = result.rows;
   updatedAt = result.updatedAt;
   questions = detectQuestions(rows);
@@ -129,6 +138,9 @@ function renderQuestionMetrics(container, metrics, chartConfig) {
     <article class="question-stat"><span>Respostas validas</span><strong>${metrics.validCount}</strong></article>
     <article class="question-stat"><span>Em branco</span><strong>${metrics.blankCount}</strong></article>
     <article class="question-stat"><span>Categorias</span><strong>${metrics.categoryCount}</strong></article>
+    <article class="question-stat"><span>Escolas</span><strong>${metrics.schoolCount}</strong></article>
+    <article class="question-stat"><span>Municipios</span><strong>${metrics.municipalityCount}</strong></article>
+    <article class="question-stat"><span>DREs</span><strong>${metrics.dreCount}</strong></article>
     <article class="question-stat wide"><span>Mais frequente</span><strong>${metrics.topCategory}</strong><small>${metrics.topPercent}% das validas</small></article>
     <article class="question-stat wide"><span>Tipo de visualizacao</span><strong>${chartConfig.chartType === 'table' ? 'Tabela' : chartConfig.chartType}</strong><small>${chartConfig.reason}</small></article>
   `;
@@ -139,13 +151,18 @@ function renderNoQuestionState(filteredRows) {
   document.querySelector('#question-count').textContent = `${filteredRows.length} registros filtrados`;
   document.querySelector('#question-context').textContent = 'Verifique os cabecalhos da planilha e a lista de perguntas ignoradas.';
   document.querySelector('#text-answers').hidden = true;
+  document.querySelector('#question-info').innerHTML = '';
   document.querySelector('#question-metrics').innerHTML = '';
+  renderSmartMessages(document.querySelector('#smart-messages'), [{ type: 'warning', text: 'Nenhuma pergunta analisavel foi encontrada.' }]);
+  renderStatisticalPanel(document.querySelector('#statistical-panel'), { metrics: null, distribution: {} });
   clearQuestionChart(document.querySelector('#question-chart'), 'Nenhuma pergunta selecionada.');
   renderSummaryTable(document.querySelector('#summary-table'), {});
   renderDrillDownTable(document.querySelector('#detail-table'), {
     rows: [],
     question: null,
     answer: '',
+    totalRows: filteredRows.length,
+    filters: currentReport().filters,
     onClear: clearDrillSelection
   });
 }
@@ -157,18 +174,27 @@ function renderQuestionAnalysis(filteredRows) {
     return;
   }
 
-  const questionType = detectQuestionType(filteredRows, question.key);
-  const isTextQuestion = questionType === 'text';
-  const distribution = getDistribution(filteredRows, question.key, { preserveText: isTextQuestion });
-  const metrics = getQuestionMetrics(filteredRows, question.key, distribution);
-  const chartConfig = detectBestChartType({ questionType, distribution });
+  const analysisKey = createCacheKey('question-analysis', updatedAt, state, filteredRows.length, question.key);
+  const analysis = getCachedCalculation(analysisKey, () => {
+    const questionType = detectQuestionType(filteredRows, question.key);
+    const isTextQuestion = questionType === 'text';
+    const distribution = getDistribution(filteredRows, question.key, { preserveText: isTextQuestion });
+    const metrics = getQuestionMetrics(filteredRows, question.key, distribution);
+    const chartConfig = detectBestChartType({ questionType, distribution });
+    return { questionType, isTextQuestion, distribution, metrics, chartConfig };
+  });
+  const { questionType, isTextQuestion, distribution, metrics, chartConfig } = analysis;
   const canvas = document.querySelector('#question-chart');
   const textAnswers = document.querySelector('#text-answers');
+  const totalMunicipios = new Set(filteredRows.map((row) => row.municipio).filter(Boolean)).size;
 
   document.querySelector('#question-title').textContent = `${question.code} - ${question.title}`;
   document.querySelector('#question-count').textContent = `${metrics.validCount} validas | ${metrics.blankCount} em branco`;
   document.querySelector('#question-context').textContent = `${question.section} | ${question.originalHeader}`;
+  renderQuestionInfoCards(document.querySelector('#question-info'), { question, questionType, metrics, chartConfig });
   renderQuestionMetrics(document.querySelector('#question-metrics'), metrics, chartConfig);
+  renderSmartMessages(document.querySelector('#smart-messages'), buildSmartMessages({ filteredRows, question, questionMetrics: metrics, totalMunicipios }));
+  renderStatisticalPanel(document.querySelector('#statistical-panel'), { metrics, distribution });
 
   if (!filteredRows.length) {
     textAnswers.hidden = true;
@@ -178,6 +204,8 @@ function renderQuestionAnalysis(filteredRows) {
       rows: [],
       question,
       answer: state.drillAnswer,
+      totalRows: filteredRows.length,
+      filters: currentReport().filters,
       onClear: clearDrillSelection
     });
     return;
@@ -194,7 +222,7 @@ function renderQuestionAnalysis(filteredRows) {
   }
 
   textAnswers.hidden = true;
-  renderQuestionChart(canvas, question, chartConfig, distribution, ({ answer }) => {
+  renderQuestionChart(canvas, question, { ...chartConfig, selectedAnswer: state.drillAnswer }, distribution, ({ answer }) => {
     state.drillAnswer = answer;
     renderDashboard();
   });
@@ -207,12 +235,25 @@ function renderQuestionAnalysis(filteredRows) {
     rows: drillRows,
     question,
     answer: state.drillAnswer,
+    totalRows: filteredRows.length,
+    filters: currentReport().filters,
     onClear: clearDrillSelection
   });
 }
 
 function renderDashboard() {
-  const filteredRows = applyFilters(rows, state);
+  const filterKey = createCacheKey('filtered-rows', updatedAt, rows.length, state.year, state.month, state.dre, state.municipio, state.escola);
+  const filteredRows = getCachedCalculation(filterKey, () => applyFilters(rows, state));
+  const question = questions.find((item) => item.key === state.questionKey) ?? questions[0] ?? null;
+  const indicatorsKey = createCacheKey('smart-indicators', updatedAt, filteredRows.length, questions.length, state);
+  const smartIndicators = getCachedCalculation(indicatorsKey, () => buildSmartIndicators(filteredRows, questions, updatedAt || getLatestTimestamp(rows)));
+
+  renderAnalysisBreadcrumb(document.querySelector('#analysis-breadcrumb'), {
+    period: selectedSpreadsheet(),
+    section: state.section,
+    question,
+    drillAnswer: state.drillAnswer
+  });
   renderReportActions(document.querySelector('#report-actions'), {
     onExportExcel: () => runReportAction((report) => {
       exportReportToExcel(report);
@@ -229,7 +270,8 @@ function renderDashboard() {
     onClearFilters: clearDashboardFilters
   });
   renderFilters(document.querySelector('#filters'), state, rows, questions, updateState);
-  renderMetricCards(document.querySelector('#metrics'), buildMetrics(filteredRows, questions, updatedAt || getLatestTimestamp(rows)));
+  renderActiveFilters(document.querySelector('#active-filters'), state, question);
+  renderMetricCards(document.querySelector('#metrics'), smartIndicators);
   renderQuestionAnalysis(filteredRows);
 }
 

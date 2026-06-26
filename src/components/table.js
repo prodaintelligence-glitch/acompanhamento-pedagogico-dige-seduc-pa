@@ -21,6 +21,7 @@ export function renderSummaryTable(container, distribution) {
 
 export function renderDetailTable(container, rows, questionKey) {
   detailGrid = mountGrid(detailGrid, container, {
+    search: true,
     columns: ['DRE', 'Municipio', 'Escola', 'Resposta selecionada'],
     data: rows.map((row) => [row.dre, row.municipio, row.escola, row[questionKey] ?? 'Nao informado'])
   });

@@ -22,7 +22,7 @@ function normalizeSpreadsheet(item) {
     name: item.name || label,
     label,
     spreadsheetId: item.spreadsheetId,
-    sheetName: item.sheetName || 'Respostas ao formulario 1',
+    sheetName: item.sheetName || 'Respostas ao formulário 1',
     description: item.description || '',
     active: item.active !== false,
     lastUpdated: item.lastUpdated || ''

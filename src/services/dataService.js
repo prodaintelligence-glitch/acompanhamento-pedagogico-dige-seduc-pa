@@ -8,9 +8,19 @@ export async function fetchResponsesForPeriod(spreadsheet) {
     throw new Error('Periodo selecionado nao encontrado na configuracao.');
   }
 
-  const payload = appConfig.useMockData
-    ? await fetchMockResponses(spreadsheet)
-    : await fetchGoogleSheetResponses(spreadsheet);
+  let payload;
+  try {
+    payload = appConfig.useMockData
+      ? await fetchMockResponses(spreadsheet)
+      : await fetchGoogleSheetResponses(spreadsheet);
+  } catch (error) {
+    if (appConfig.enableDebugLogs) {
+      console.error('Erro ao carregar dados da planilha:', error);
+    }
+    throw new Error(appConfig.useMockData
+      ? 'Nao foi possivel carregar os dados mockados.'
+      : `Nao foi possivel carregar dados reais de ${spreadsheet.label || spreadsheet.month}. Verifique endpoint, ID da planilha, nome da aba e permissoes do Apps Script.`);
+  }
 
   const rows = normalizeRows(payload.headers, payload.rows);
 

@@ -2,7 +2,7 @@ function doGet(e) {
   try {
     var params = e && e.parameter ? e.parameter : {};
     var spreadsheetId = params.spreadsheetId;
-    var sheetName = params.sheetName || 'Respostas ao formulario 1';
+    var sheetName = params.sheetName || 'Respostas ao formulário 1';
 
     if (!spreadsheetId) {
       return jsonResponse({

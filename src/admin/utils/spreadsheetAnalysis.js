@@ -1,4 +1,5 @@
 import { detectQuestions, detectQuestionType } from '../../utils/detectQuestions.js';
+import { ignoredQuestions } from '../../config/ignoredQuestions.js';
 import { getDistribution } from '../../utils/statistics.js';
 
 export function analyzeSpreadsheetRows(rows) {
@@ -14,7 +15,7 @@ export function analyzeSpreadsheetRows(rows) {
   return {
     totalQuestions: questions.length,
     totalAxes: axes.size,
-    ignoredQuestions: [],
+    ignoredQuestions,
     openQuestions: openQuestions.map((question) => question.code),
     closedQuestions: closedQuestions.map((question) => question.code),
     categories,

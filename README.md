@@ -1,112 +1,165 @@
 # Acompanhamento Pedagogico - DIGE/SEDUC-PA
 
-Aplicacao web simples, moderna e responsiva para analise mensal das respostas do formulario de Acompanhamento Pedagogico da DIGE/SEDUC-PA.
+Aplicacao web privada para analise mensal das respostas do formulario de Acompanhamento Pedagogico da DIGE/SEDUC-PA.
+
+## Objetivo
+
+Centralizar a leitura das respostas mensais, permitindo que gestores acompanhem indicadores, filtrem dados por territorio/escola, analisem perguntas, executem drill-down e gerem relatorios a partir de dados mockados ou de planilhas Google Sheets via Google Apps Script.
 
 ## Tecnologias
 
 - Vite
 - HTML5, CSS3 e JavaScript ES6+
-- Chart.js para graficos
-- Grid.js para tabelas
-- Lucide Icons para iconografia
-- SheetJS para exportacao Excel
-- jsPDF para exportacao PDF
+- Chart.js
+- Grid.js
+- Lucide Icons
+- SheetJS
+- jsPDF
 
-## Como executar
+## Instalar
 
 ```bash
 npm install
+```
+
+## Executar localmente
+
+```bash
 npm run dev
 ```
 
-Credenciais locais da primeira versao:
+Credenciais locais:
 
 - Usuario: `admin`
 - Senha: `dige2026`
 
-## Dados
+## Variaveis de ambiente
 
-A aplicacao possui duas fontes de dados:
+Copie `.env.example` para `.env` e ajuste os valores locais:
 
-- mock local em `src/data/mockResponses.js`;
-- Google Sheets via endpoint publicado pelo Google Apps Script.
-
-A troca entre as fontes fica em `src/config/appConfig.js`:
-
-```js
-export const appConfig = {
-  useMockData: true,
-  googleAppsScriptEndpoint: ''
-};
+```text
+VITE_USE_MOCK_DATA=true
+VITE_GOOGLE_APPS_SCRIPT_ENDPOINT=INSERIR_ENDPOINT_AQUI
+VITE_ENABLE_DEBUG_LOGS=false
 ```
 
-Use `useMockData: true` para desenvolvimento local. Para ler planilhas reais, publique o Apps Script, informe a URL em `googleAppsScriptEndpoint` e altere `useMockData` para `false`.
+Use mock local:
 
-## Configuracoes principais
+```text
+VITE_USE_MOCK_DATA=true
+```
 
-- `src/config/spreadsheets.json`: configuracao inicial das planilhas mensais.
-- `Configurações > Planilhas`: area administrativa para cadastrar, testar, importar e exportar planilhas sem alterar codigo.
-- `src/config/ignoredQuestions.js`: lista perguntas de navegacao que nao entram nas analises.
-- `src/config/appConfig.js`: configura credenciais locais, modo mock e endpoint do Apps Script.
+Use Google Sheets real:
+
+```text
+VITE_USE_MOCK_DATA=false
+VITE_GOOGLE_APPS_SCRIPT_ENDPOINT=https://script.google.com/macros/s/SEU_DEPLOYMENT_ID/exec
+```
+
+Nunca versionar `.env` com endpoint real. O arquivo `.env` esta ignorado pelo Git.
 
 ## Google Apps Script
 
-O arquivo `apps-script/Code.gs` contem o script a ser colado no Google Apps Script. Ele recebe `spreadsheetId` e `sheetName` por GET, le a aba informada e retorna JSON no formato:
+O script esta em `apps-script/Code.gs`. Publique-o como Web App no Google Apps Script e copie a URL terminada em `/exec`.
 
-```json
-{
-  "success": true,
-  "headers": [],
-  "rows": [],
-  "totalRows": 0,
-  "updatedAt": "2026-06-26T00:00:00.000Z"
-}
+Documentacao detalhada:
+
+```text
+docs/google-apps-script.md
 ```
 
-O passo a passo completo esta em `docs/google-apps-script.md`.
+## Planilhas mensais
 
-## Funcionalidades desta etapa
+A configuracao inicial fica em:
 
-- Login local simples.
-- Dashboard com indicadores principais.
-- Carregamento dinamico por ano e mes.
-- Fallback para mock local.
-- Preparacao para leitura real via Google Apps Script.
-- Normalizacao de linhas da planilha para objetos JavaScript.
-- Deteccao automatica de perguntas numeradas.
-- Ignora automaticamente perguntas configuradas.
-- Filtros globais por DRE, municipio, escola, eixo/secao e pergunta.
-- Grafico inicial com Chart.js.
-- Drill-down basico ao clicar em itens do grafico.
-- Tabelas de resumo e detalhes com Grid.js.
-- Estrutura inicial para exportacao Excel e PDF.
+```text
+src/config/spreadsheets.json
+```
 
-## Dashboard inteligente
+Na aplicacao, acesse:
 
-O modulo principal de analise visual permite selecionar eixo/secao e pergunta, recalcular automaticamente os dados conforme filtros globais e escolher o tipo de visualizacao mais adequado para cada pergunta. Perguntas categoricas usam grafico de setores, barras ou barras horizontais conforme a quantidade de categorias; perguntas abertas sao analisadas por tabela pesquisavel.
+```text
+Configuracoes > Planilhas
+```
 
-Ao clicar em uma categoria do grafico, a tabela de drill-down mostra os registros correspondentes com DRE, municipio, escola e resposta. O painel da pergunta tambem exibe total de registros filtrados, respostas validas, respostas em branco, categorias encontradas e categoria mais frequente.
+Por essa area e possivel:
+
+- cadastrar planilhas mensais;
+- testar conexao;
+- atualizar dados sem reiniciar;
+- exportar/importar configuracao JSON;
+- acompanhar monitor de integridade;
+- consultar log de sincronizacao.
+
+Alteracoes feitas pela interface sao salvas no armazenamento local do navegador. Para compartilhar configuracoes entre maquinas, use exportacao/importacao JSON.
+
+## Dashboard
+
+O dashboard inclui:
+
+- indicadores inteligentes;
+- filtros globais;
+- selecao de eixo e pergunta;
+- grafico automatico;
+- tabela de distribuicao;
+- drill-down com busca;
+- painel estatistico;
+- mensagens automaticas;
+- breadcrumb da analise.
 
 ## Relatorios e exportacoes
 
-O dashboard possui acoes contextuais para exportar Excel, gerar PDF, imprimir e limpar filtros. As exportacoes respeitam o periodo, os filtros globais, a pergunta selecionada e a selecao de drill-down.
+A aplicacao permite:
 
-A exportacao Excel gera um arquivo `.xlsx` com abas para dados filtrados, drill-down, distribuicao, resumo executivo e filtros aplicados. Quando a pergunta selecionada for aberta, tambem inclui uma aba de respostas abertas.
+- exportar Excel;
+- gerar PDF;
+- imprimir dashboard;
+- exportar dados filtrados;
+- exportar drill-down;
+- exportar respostas abertas.
 
-O PDF inclui titulo, periodo, data de geracao, filtros aplicados, resumo executivo, pergunta selecionada, distribuicao das respostas e uma amostra da tabela de drill-down ou respostas abertas. A impressao usa um visual proprio, ocultando menu lateral, botoes e controles interativos.
+## Build
 
-## Experiencia analitica do dashboard
+```bash
+npm run build
+```
 
-O dashboard foi evoluido para funcionar como ambiente de investigacao dos dados. A tela agora exibe breadcrumb da analise, filtros ativos em destaque, indicadores inteligentes, cards informativos da pergunta selecionada, mensagens automaticas e painel estatistico lateral.
+A saida de producao fica em:
 
-Os indicadores gerais respondem aos filtros e incluem total de respostas, escolas, municipios, DREs, perguntas respondidas, maior indice positivo, maior indice negativo, pergunta com mais respostas em branco e ultima atualizacao. Ao selecionar uma pergunta, o sistema calcula respostas validas, respostas em branco, categorias, moda, frequencia absoluta e relativa, escolas, municipios e DREs participantes.
+```text
+dist/
+```
 
-O drill-down destaca a categoria selecionada, mostra quantidade e percentual de registros, lista os filtros ativos e permite pesquisa instantanea por DRE, municipio, escola e resposta. As tabelas continuam ordenaveis e o dashboard usa cache simples para evitar recalculos desnecessarios ao alternar filtros e perguntas.
+Avisos de bundle grande podem aparecer por causa de `xlsx`, `jsPDF` e dependencias de exportacao. Isso nao impede o build.
 
-## Administracao de planilhas
+## Deploy na Vercel
 
-A area `Configurações > Planilhas` permite cadastrar novas planilhas mensais pela interface. O administrador informa ano, mes, nome amigavel, ID da planilha Google, nome da aba, descricao opcional e status ativo.
+Documentacao:
 
-As configuracoes iniciais ficam em `src/config/spreadsheets.json`. Durante o uso da aplicacao, alteracoes feitas pela interface sao persistidas no armazenamento local do navegador e podem ser salvas/restauradas pelos botoes `Exportar Configuracao` e `Importar Configuracao`.
+```text
+docs/vercel-deploy.md
+```
 
-O modulo administrativo tambem permite testar conexao com o Google Apps Script, atualizar dados sem reiniciar a aplicacao, visualizar monitor de integridade, historico de sincronizacoes e a identificacao automatica de perguntas, eixos, perguntas abertas/fechadas e categorias encontradas.
+Configure na Vercel:
+
+```text
+VITE_USE_MOCK_DATA=false
+VITE_GOOGLE_APPS_SCRIPT_ENDPOINT=https://script.google.com/macros/s/SEU_DEPLOYMENT_ID/exec
+VITE_ENABLE_DEBUG_LOGS=false
+```
+
+Build command:
+
+```bash
+npm run build
+```
+
+Output directory:
+
+```text
+dist
+```
+
+## Dados mockados e dados reais
+
+O mock local continua disponivel para desenvolvimento. Em producao, configure `VITE_USE_MOCK_DATA=false` e informe o endpoint real do Google Apps Script. Se o endpoint real falhar, a aplicacao exibe erro amigavel e nao troca silenciosamente para mock.

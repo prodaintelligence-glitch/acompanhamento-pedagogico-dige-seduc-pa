@@ -1,62 +1,63 @@
-# Integracao com Google Apps Script
+# Integracao real com Google Apps Script
 
-A aplicacao pode ler respostas diretamente de planilhas Google Sheets mensais por meio de um Web App publicado no Google Apps Script. O mock local continua disponivel para testes e desenvolvimento.
+A aplicacao pode ler respostas diretamente de uma planilha Google Sheets por meio de um Web App publicado no Google Apps Script. O mock local continua disponivel para desenvolvimento.
 
-## 1. Criar o projeto no Apps Script
+## 1. Criar o projeto
 
 1. Acesse `https://script.google.com`.
 2. Clique em `Novo projeto`.
-3. Renomeie o projeto para algo como `Acompanhamento Pedagogico DIGE SEDUC PA`.
-4. Abra o arquivo `apps-script/Code.gs` deste projeto local.
-5. Copie todo o conteudo e cole no arquivo `Code.gs` do Google Apps Script.
+3. Renomeie o projeto para `Acompanhamento Pedagogico DIGE SEDUC PA`.
+4. No projeto local, abra `apps-script/Code.gs`.
+5. Copie todo o conteudo do arquivo.
+6. Cole o conteudo no arquivo `Code.gs` do Google Apps Script.
+7. Clique em `Salvar`.
 
-## 2. Publicar como Web App
+## 2. Implantar como Web App
 
-1. No Apps Script, clique em `Implantar` e depois em `Nova implantacao`.
-2. Em `Tipo`, selecione `Aplicativo da Web`.
-3. Em `Executar como`, escolha `Eu`.
-4. Em `Quem pode acessar`, escolha a opcao permitida pela politica institucional. Para uso interno controlado, prefira acesso restrito aos usuarios autorizados.
-5. Clique em `Implantar`.
-6. Autorize as permissoes solicitadas para leitura das planilhas.
-7. Copie a URL do aplicativo da Web.
+1. Clique em `Implantar`.
+2. Clique em `Nova implantacao`.
+3. Em `Tipo`, escolha `Aplicativo da Web`.
+4. Em `Executar como`, escolha `Eu`.
+5. Em `Quem pode acessar`, escolha a opcao definida pela politica institucional.
+6. Para teste controlado, use uma opcao restrita sempre que possivel.
+7. Clique em `Implantar`.
+8. Autorize a leitura das planilhas quando o Google solicitar.
+9. Copie a URL terminada em `/exec`.
 
-## 3. Configurar o endpoint no projeto
+## 3. Configurar a aplicacao
 
-No arquivo `src/config/appConfig.js`, cole a URL copiada em `googleAppsScriptEndpoint` e altere `useMockData` para `false` quando quiser usar dados reais:
+No arquivo `src/config/appConfig.js`, informe a URL do Web App:
 
 ```js
 export const appConfig = {
   useMockData: false,
-  googleAppsScriptEndpoint: 'https://script.google.com/macros/s/SEU_DEPLOYMENT_ID/exec'
+  googleAppsScriptEndpoint: 'https://script.google.com/macros/s/SEU_DEPLOYMENT_ID/exec',
+  enableDebugLogs: false
 };
 ```
 
-Para voltar ao ambiente local com dados de teste, mantenha:
+Para voltar ao mock local:
 
 ```js
 useMockData: true
 ```
 
-## 4. Cadastrar planilhas mensais
+Quando `useMockData` estiver como `false`, a aplicacao nao volta silenciosamente ao mock se o endpoint falhar. Ela exibe erro amigavel para que o problema seja corrigido.
 
-Use a area `Configurações > Planilhas` dentro da aplicacao para cadastrar novos meses sem alterar arquivos JavaScript. Informe ano, mes, nome amigavel, ID da planilha, nome da aba e marque se a configuracao esta ativa.
+## 4. Cadastrar a planilha de Junho/2026
 
-A configuracao inicial do projeto fica em `src/config/spreadsheets.json`:
+Use a tela `Configuracoes > Planilhas` para cadastrar ou editar Junho/2026.
 
-```js
-[
-  {
-    "year": 2026,
-    "month": "Junho",
-    "label": "Junho/2026",
-    "spreadsheetId": "ID_DA_PLANILHA",
-    "sheetName": "Respostas ao formulario 1",
-    "active": true
-  }
-]
-```
+Campos principais:
 
-O `spreadsheetId` e a parte da URL da planilha entre `/d/` e `/edit`.
+- Ano: `2026`
+- Mes: `Junho`
+- Nome amigavel: `Junho/2026`
+- ID da Planilha Google: ID real da planilha
+- Nome da Aba: `Respostas ao formulário 1` ou o nome exato usado no Google Sheets
+- Ativa: marcado
+
+O ID da planilha fica na URL entre `/d/` e `/edit`.
 
 Exemplo:
 
@@ -64,28 +65,43 @@ Exemplo:
 https://docs.google.com/spreadsheets/d/1ABCDEF123456/edit
 ```
 
-Nesse caso, o ID e:
+ID:
 
 ```text
 1ABCDEF123456
 ```
 
-Para backup ou migracao, use `Exportar Configuracao` e `Importar Configuracao` na tela administrativa.
+A configuracao inicial do projeto fica em `src/config/spreadsheets.json`, mas alteracoes feitas pela interface sao persistidas no armazenamento local do navegador e podem ser exportadas/importadas em JSON.
 
-## 5. Parametros enviados ao endpoint
+## 5. Testar a conexao
 
-A aplicacao chama o Web App por GET com:
+Na tela `Configuracoes > Planilhas`:
 
-- `spreadsheetId`: ID da planilha mensal.
-- `sheetName`: nome da aba que contem as respostas.
+1. Selecione ou cadastre Junho/2026.
+2. Clique em `Testar Conexao`.
+3. Verifique se o painel retorna:
+   - status da conexao;
+   - quantidade de linhas;
+   - quantidade de colunas;
+   - nome da aba;
+   - ultima atualizacao;
+   - primeiras perguntas identificadas.
+4. Clique em `Atualizar Dados` para atualizar dashboard, filtros, perguntas, graficos e tabelas sem reiniciar a aplicacao.
+
+## 6. Parametros do endpoint
+
+A aplicacao chama o Web App por GET:
+
+- `spreadsheetId`: ID da planilha.
+- `sheetName`: nome da aba.
 
 Exemplo:
 
 ```text
-https://script.google.com/macros/s/SEU_DEPLOYMENT_ID/exec?spreadsheetId=ID_DA_PLANILHA&sheetName=Respostas%20ao%20formulario%201
+https://script.google.com/macros/s/SEU_DEPLOYMENT_ID/exec?spreadsheetId=ID_DA_PLANILHA&sheetName=Respostas%20ao%20formul%C3%A1rio%201
 ```
 
-## 6. Retorno esperado
+## 7. Retorno esperado
 
 Sucesso:
 
@@ -108,16 +124,14 @@ Erro:
 }
 ```
 
-## 7. Cabecalhos e perguntas
+## 8. Regras de identificacao
 
-A aplicacao transforma as linhas da planilha em objetos JavaScript usando os cabecalhos da primeira linha.
-
-Regras atuais:
+A aplicacao usa os cabecalhos da primeira linha e aplica as seguintes regras:
 
 - colunas A ate L sao tratadas como dados pessoais ou institucionais;
 - perguntas sao identificadas preferencialmente a partir da coluna O;
-- perguntas precisam iniciar com numeracao, como `1.1`, `1.2`, `2.1`, `4.10`;
-- perguntas listadas em `src/config/ignoredQuestions.js` nao entram nas analises.
+- perguntas devem iniciar com codigos como `1.1`, `1.2`, `2.1`, `4.10`;
+- perguntas `1.4`, `2.5`, `3.9`, `4.14`, `5.4` e `6.13` sao ignoradas.
 
 Exemplo de cabecalho recomendado:
 

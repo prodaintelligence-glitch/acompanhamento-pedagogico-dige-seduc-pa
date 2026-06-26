@@ -134,7 +134,7 @@ export function renderSpreadsheetAdminPage(container, props) {
             <label>Mes<input name="month" required value="${fieldValue(item, 'month')}" /></label>
             <label>Nome amigavel<input name="name" required value="${fieldValue(item, 'name')}" /></label>
             <label>ID da Planilha Google<input name="spreadsheetId" required value="${fieldValue(item, 'spreadsheetId')}" /></label>
-            <label>Nome da Aba<input name="sheetName" required value="${fieldValue(item, 'sheetName', 'Respostas ao formulario 1')}" /></label>
+            <label>Nome da Aba<input name="sheetName" required value="${fieldValue(item, 'sheetName', 'Respostas ao formulário 1')}" /></label>
             <label>Descricao<textarea name="description">${fieldValue(item, 'description')}</textarea></label>
             <label class="checkbox-label"><input name="active" type="checkbox" ${item?.active !== false ? 'checked' : ''} /> Ativa</label>
             <div class="inline-actions">

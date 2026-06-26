@@ -6,6 +6,7 @@ export const appConfig = {
     username: 'admin',
     password: 'dige2026'
   },
-  useMockData: true,
-  googleAppsScriptEndpoint: ''
+  useMockData: import.meta.env.VITE_USE_MOCK_DATA !== 'false',
+  googleAppsScriptEndpoint: import.meta.env.VITE_GOOGLE_APPS_SCRIPT_ENDPOINT || '',
+  enableDebugLogs: import.meta.env.VITE_ENABLE_DEBUG_LOGS === 'true'
 };

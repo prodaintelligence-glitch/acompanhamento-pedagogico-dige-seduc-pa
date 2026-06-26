@@ -5,9 +5,9 @@
     "month": "Junho",
     "name": "Junho/2026",
     "label": "Junho/2026",
-    "spreadsheetId": "INSERIR_ID_DA_PLANILHA_DE_JUNHO",
-    "sheetName": "Respostas ao formulario 1",
-    "description": "Configuracao inicial do acompanhamento pedagogico.",
+    "spreadsheetId": "INSERIR_ID_REAL_DA_PLANILHA_DE_JUNHO",
+    "sheetName": "Respostas ao formulário 1",
+    "description": "Substitua o campo spreadsheetId pelo ID real da planilha de Junho/2026 antes de ativar dados reais.",
     "active": true,
     "lastUpdated": ""
   },
@@ -18,7 +18,7 @@
     "name": "Julho/2026",
     "label": "Julho/2026",
     "spreadsheetId": "INSERIR_ID_DA_PLANILHA_DE_JULHO",
-    "sheetName": "Respostas ao formulario 1",
+    "sheetName": "Respostas ao formulário 1",
     "description": "",
     "active": false,
     "lastUpdated": ""
@@ -30,7 +30,7 @@
     "name": "Agosto/2026",
     "label": "Agosto/2026",
     "spreadsheetId": "INSERIR_ID_DA_PLANILHA_DE_AGOSTO",
-    "sheetName": "Respostas ao formulario 1",
+    "sheetName": "Respostas ao formulário 1",
     "description": "",
     "active": false,
     "lastUpdated": ""

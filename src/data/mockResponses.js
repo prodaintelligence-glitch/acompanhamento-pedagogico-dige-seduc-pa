@@ -1,0 +1,62 @@
+﻿export const mockResponses = [
+  {
+    timestamp: '2026-06-25T08:15:00-03:00',
+    dre: 'DRE Belem',
+    municipio: 'Belem',
+    escola: 'EEEFM Augusto Meira',
+    cargo: 'Coordenacao pedagogica',
+    email: 'coord1@escola.pa.gov.br',
+    '1.1 - A escola realizou planejamento pedagogico no mes?': 'Sim',
+    '1.2 - Houve reuniao com professores?': 'Sim',
+    '1.3 - Quantidade de turmas acompanhadas': 12,
+    '1.4 - Navegacao da secao': 'Avancar',
+    '2.1 - Principal desafio pedagogico identificado': 'Baixa frequencia dos estudantes',
+    '2.2 - Acompanhamento individual foi realizado?': 'Parcialmente',
+    '3.1 - Estrategias exitosas registradas': 'Busca ativa e reunioes por area do conhecimento'
+  },
+  {
+    timestamp: '2026-06-25T09:20:00-03:00',
+    dre: 'DRE Belem',
+    municipio: 'Ananindeua',
+    escola: 'EEEFM Dom Bosco',
+    cargo: 'Direcao',
+    email: 'direcao@escola.pa.gov.br',
+    '1.1 - A escola realizou planejamento pedagogico no mes?': 'Sim',
+    '1.2 - Houve reuniao com professores?': 'Nao',
+    '1.3 - Quantidade de turmas acompanhadas': 8,
+    '1.4 - Navegacao da secao': 'Avancar',
+    '2.1 - Principal desafio pedagogico identificado': 'Dificuldade de recomposicao das aprendizagens',
+    '2.2 - Acompanhamento individual foi realizado?': 'Sim',
+    '3.1 - Estrategias exitosas registradas': 'Monitoria entre pares e simulados diagnosticos'
+  },
+  {
+    timestamp: '2026-06-26T10:05:00-03:00',
+    dre: 'DRE Santarem',
+    municipio: 'Santarem',
+    escola: 'EEEFM Almirante Soares Dutra',
+    cargo: 'Coordenacao pedagogica',
+    email: 'coord2@escola.pa.gov.br',
+    '1.1 - A escola realizou planejamento pedagogico no mes?': 'Parcialmente',
+    '1.2 - Houve reuniao com professores?': 'Sim',
+    '1.3 - Quantidade de turmas acompanhadas': 15,
+    '1.4 - Navegacao da secao': 'Avancar',
+    '2.1 - Principal desafio pedagogico identificado': 'Necessidade de formacao para uso de evidencias',
+    '2.2 - Acompanhamento individual foi realizado?': 'Parcialmente',
+    '3.1 - Estrategias exitosas registradas': 'Analise coletiva de resultados bimestrais'
+  },
+  {
+    timestamp: '2026-06-26T11:40:00-03:00',
+    dre: 'DRE Maraba',
+    municipio: 'Maraba',
+    escola: 'EEEFM Liberdade',
+    cargo: 'Tecnico pedagogico',
+    email: 'tecnico@escola.pa.gov.br',
+    '1.1 - A escola realizou planejamento pedagogico no mes?': 'Nao',
+    '1.2 - Houve reuniao com professores?': 'Nao',
+    '1.3 - Quantidade de turmas acompanhadas': 5,
+    '1.4 - Navegacao da secao': 'Avancar',
+    '2.1 - Principal desafio pedagogico identificado': 'Rotatividade de docentes',
+    '2.2 - Acompanhamento individual foi realizado?': 'Nao',
+    '3.1 - Estrategias exitosas registradas': 'Plano de retomada por componente curricular'
+  }
+];

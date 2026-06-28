@@ -1,76 +1,62 @@
+function normalizeApiAction(value) {
+  return String(value || 'healthcheck').trim().toLowerCase().replace(/[^a-z-]/g, '').slice(0, 40);
+}
+
+function routeApiRequest(action, params) {
+  var refresh = params.refresh === '1';
+
+  if (action === 'healthcheck') {
+    return { data: buildHealthcheckData(), message: 'API operacional' };
+  }
+  if (action === 'listspreadsheets' || action === 'catalog' || action === 'periods') {
+    return { data: buildSpreadsheetListData(refresh), message: 'Planilhas localizadas com sucesso.' };
+  }
+  if (action === 'getspreadsheetdata' || action === 'period') {
+    return { data: buildSpreadsheetData(params), message: 'Dados da planilha carregados com sucesso.' };
+  }
+  if (action === 'getdashboard') {
+    return { data: buildDashboardData(params), message: 'Dashboard carregado com sucesso.' };
+  }
+  if (action === 'getindicators' || action === 'questions' || action === 'question-catalog') {
+    return { data: buildIndicatorsData(params), message: 'Indicadores carregados com sucesso.' };
+  }
+  if (action === 'getcharts') {
+    return { data: buildChartsData(params), message: 'Graficos carregados com sucesso.' };
+  }
+  if (action === 'getfilters') {
+    return { data: buildFiltersData(params), message: 'Filtros carregados com sucesso.' };
+  }
+  if (action === 'getstatistics') {
+    return { data: buildStatisticsData(params), message: 'Estatisticas carregadas com sucesso.' };
+  }
+  if (action === 'getmetadata') {
+    return { data: buildMetadataData(refresh), message: 'Metadados carregados com sucesso.' };
+  }
+  if (action === 'compare') {
+    return { data: buildComparisonContract(params.periodA || '', params.periodB || ''), message: 'Periodos comparados com sucesso.' };
+  }
+  throw new Error('Acao nao suportada. Consulte a documentacao da API.');
+}
+
 function doGet(e) {
+  var startedAt = new Date().getTime();
+  var params = e && e.parameter ? e.parameter : {};
+  var action = normalizeApiAction(params.action);
+
   try {
-    var params = e && e.parameter ? e.parameter : {};
-    var spreadsheetId = params.spreadsheetId;
-    var sheetName = params.sheetName || 'Respostas ao formulário 1';
-
-    if (!spreadsheetId) {
-      return jsonResponse({
-        success: false,
-        message: 'Parametro spreadsheetId e obrigatorio.'
-      });
-    }
-
-    var spreadsheet = SpreadsheetApp.openById(spreadsheetId);
-    var sheet = spreadsheet.getSheetByName(sheetName);
-
-    if (!sheet) {
-      return jsonResponse({
-        success: false,
-        message: 'Aba "' + sheetName + '" nao encontrada.'
-      });
-    }
-
-    var values = sheet.getDataRange().getValues();
-    if (!values.length) {
-      return jsonResponse({
-        success: true,
-        headers: [],
-        rows: [],
-        totalRows: 0,
-        updatedAt: new Date().toISOString()
-      });
-    }
-
-    var headers = values[0].map(normalizeHeader);
-    var rows = values.slice(1)
-      .filter(function(row) {
-        return row.some(function(cell) {
-          return cell !== '' && cell !== null;
-        });
-      })
-      .map(function(row) {
-        return row.map(normalizeCell);
-      });
-
-    return jsonResponse({
-      success: true,
-      headers: headers,
-      rows: rows,
-      totalRows: rows.length,
-      updatedAt: new Date().toISOString()
+    if (params.refresh === '1') clearApiCache();
+    var result = routeApiRequest(action, params);
+    logApiEvent('success', action, {
+      period: params.period || '',
+      elapsedMs: new Date().getTime() - startedAt
     });
+    return jsonResponse(successResponse(result.data, result.message));
   } catch (error) {
-    return jsonResponse({
-      success: false,
-      message: error && error.message ? error.message : 'Erro inesperado ao ler a planilha.'
+    logApiEvent('error', action, {
+      period: params.period || '',
+      elapsedMs: new Date().getTime() - startedAt,
+      message: error && error.message ? error.message : String(error)
     });
+    return jsonResponse(errorResponse(error));
   }
-}
-
-function normalizeHeader(header) {
-  return String(header || '').trim();
-}
-
-function normalizeCell(value) {
-  if (Object.prototype.toString.call(value) === '[object Date]') {
-    return value.toISOString();
-  }
-  return value === null || value === undefined ? '' : value;
-}
-
-function jsonResponse(payload) {
-  return ContentService
-    .createTextOutput(JSON.stringify(payload))
-    .setMimeType(ContentService.MimeType.JSON);
 }

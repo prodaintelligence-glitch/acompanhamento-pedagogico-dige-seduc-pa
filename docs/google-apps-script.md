@@ -1,117 +1,64 @@
-# Integracao real com Google Apps Script
+# API oficial - Google Apps Script
 
-A aplicacao pode ler respostas diretamente de uma planilha Google Sheets por meio de um Web App publicado no Google Apps Script. O mock local continua disponivel para desenvolvimento.
-
-## 1. Criar o projeto
-
-1. Acesse `https://script.google.com`.
-2. Clique em `Novo projeto`.
-3. Renomeie o projeto para `Acompanhamento Pedagogico DIGE SEDUC PA`.
-4. No projeto local, abra `apps-script/Code.gs`.
-5. Copie todo o conteudo do arquivo.
-6. Cole o conteudo no arquivo `Code.gs` do Google Apps Script.
-7. Clique em `Salvar`.
-
-## 2. Implantar como Web App
-
-1. Clique em `Implantar`.
-2. Clique em `Nova implantacao`.
-3. Em `Tipo`, escolha `Aplicativo da Web`.
-4. Em `Executar como`, escolha `Eu`.
-5. Em `Quem pode acessar`, escolha a opcao definida pela politica institucional.
-6. Para teste controlado, use uma opcao restrita sempre que possivel.
-7. Clique em `Implantar`.
-8. Autorize a leitura das planilhas quando o Google solicitar.
-9. Copie a URL terminada em `/exec`.
-
-## 3. Configurar a aplicacao
-
-No arquivo `src/config/appConfig.js`, informe a URL do Web App:
-
-```js
-export const appConfig = {
-  useMockData: false,
-  googleAppsScriptEndpoint: 'https://script.google.com/macros/s/SEU_DEPLOYMENT_ID/exec',
-  enableDebugLogs: false
-};
-```
-
-Para voltar ao mock local:
-
-```js
-useMockData: true
-```
-
-Quando `useMockData` estiver como `false`, a aplicacao nao volta silenciosamente ao mock se o endpoint falhar. Ela exibe erro amigavel para que o problema seja corrigido.
-
-## 4. Cadastrar a planilha de Junho/2026
-
-Use a tela `Configuracoes > Planilhas` para cadastrar ou editar Junho/2026.
-
-Campos principais:
-
-- Ano: `2026`
-- Mes: `Junho`
-- Nome amigavel: `Junho/2026`
-- ID da Planilha Google: ID real da planilha
-- Nome da Aba: `Respostas ao formulário 1` ou o nome exato usado no Google Sheets
-- Ativa: marcado
-
-O ID da planilha fica na URL entre `/d/` e `/edit`.
-
-Exemplo:
+## Arquitetura definitiva
 
 ```text
-https://docs.google.com/spreadsheets/d/1ABCDEF123456/edit
+Frontend Vite
+  -> Google Apps Script (API JSON)
+  -> Google Drive
+  -> Google Sheets
 ```
 
-ID:
+O frontend nunca acessa diretamente o Google Drive ou uma planilha. A pasta oficial e a unica origem de dados:
+
+- URL: `https://drive.google.com/drive/folders/1skkXiZHim8lPadjPrzbTlxh19ZKBo_Ly`
+- ID: `1skkXiZHim8lPadjPrzbTlxh19ZKBo_Ly`
+
+O ID fica centralizado em `apps-script/Config.gs` pela constante `DRIVE_FOLDER_ID`.
+
+## Estrutura do Apps Script
+
+- `Code.gs`: roteamento das requisicoes GET e aliases legados.
+- `Config.gs`: pasta oficial, cache e criterios configuraveis.
+- `DriveService.gs`: acesso exclusivo a pasta e descarte de arquivos temporarios.
+- `CatalogService.gs`: descoberta, ordenacao e catalogo de periodos.
+- `SpreadsheetService.gs`: validacao, leitura, normalizacao e estatisticas.
+- `DashboardService.gs`: dashboard, filtros, graficos, indicadores e metadados.
+- `QuestionCatalogService.gs`: catalogo permanente e comparacao de perguntas.
+- `CacheService.gs`: cache fragmentado e invalidacao por registro de chaves.
+- `ResponseService.gs`: envelope JSON padronizado.
+- `ErrorService.gs`: codigos e mensagens publicas seguras.
+- `Logger.gs`: logs tecnicos estruturados.
+- `Utils.gs`: meses, aliases, normalizacao e periodos.
+
+## Publicacao
+
+1. Crie um projeto no Google Apps Script.
+2. Crie todos os arquivos `.gs` existentes em `apps-script/`.
+3. Copie o conteudo dos arquivos locais para os correspondentes no editor.
+4. Confirme o `DRIVE_FOLDER_ID` em `Config.gs`.
+5. Implante como Aplicativo da Web, executando como o proprietario.
+6. Conceda acesso ao Drive e Sheets e restrinja os usuarios conforme a politica institucional.
+7. Copie a URL terminada em `/exec`.
+8. Configure na Vercel:
 
 ```text
-1ABCDEF123456
+VITE_USE_MOCK_DATA=false
+VITE_GOOGLE_APPS_SCRIPT_URL=https://script.google.com/macros/s/SEU_DEPLOYMENT_ID/exec
 ```
 
-A configuracao inicial do projeto fica em `src/config/spreadsheets.json`, mas alteracoes feitas pela interface sao persistidas no armazenamento local do navegador e podem ser exportadas/importadas em JSON.
+`VITE_GOOGLE_APPS_SCRIPT_ENDPOINT` permanece apenas como fallback temporario para ambientes antigos.
 
-## 5. Testar a conexao
-
-Na tela `Configuracoes > Planilhas`:
-
-1. Selecione ou cadastre Junho/2026.
-2. Clique em `Testar Conexao`.
-3. Verifique se o painel retorna:
-   - status da conexao;
-   - quantidade de linhas;
-   - quantidade de colunas;
-   - nome da aba;
-   - ultima atualizacao;
-   - primeiras perguntas identificadas.
-4. Clique em `Atualizar Dados` para atualizar dashboard, filtros, perguntas, graficos e tabelas sem reiniciar a aplicacao.
-
-## 6. Parametros do endpoint
-
-A aplicacao chama o Web App por GET:
-
-- `spreadsheetId`: ID da planilha.
-- `sheetName`: nome da aba.
-
-Exemplo:
-
-```text
-https://script.google.com/macros/s/SEU_DEPLOYMENT_ID/exec?spreadsheetId=ID_DA_PLANILHA&sheetName=Respostas%20ao%20formul%C3%A1rio%201
-```
-
-## 7. Retorno esperado
+## Contrato de resposta
 
 Sucesso:
 
 ```json
 {
   "success": true,
-  "headers": [],
-  "rows": [],
-  "totalRows": 0,
-  "updatedAt": "2026-06-26T00:00:00.000Z"
+  "data": {},
+  "message": "",
+  "timestamp": "2026-06-28T00:00:00.000Z"
 }
 ```
 
@@ -120,21 +67,62 @@ Erro:
 ```json
 {
   "success": false,
-  "message": "Descricao do erro"
+  "error": "SPREADSHEET_ERROR",
+  "details": "Mensagem amigavel.",
+  "timestamp": "2026-06-28T00:00:00.000Z"
 }
 ```
 
-## 8. Regras de identificacao
+As respostas usam somente JSON e nao expõem IDs internos dos arquivos.
 
-A aplicacao usa os cabecalhos da primeira linha e aplica as seguintes regras:
+## Endpoints
 
-- colunas A ate L sao tratadas como dados pessoais ou institucionais;
-- perguntas sao identificadas preferencialmente a partir da coluna O;
-- perguntas devem iniciar com codigos como `1.1`, `1.2`, `2.1`, `4.10`;
-- perguntas `1.4`, `2.5`, `3.9`, `4.14`, `5.4` e `6.13` sao ignoradas.
+| Acao | Parametros | Responsabilidade |
+| --- | --- | --- |
+| `healthcheck` | nenhum | Verifica pasta e API |
+| `listSpreadsheets` | `refresh=1` opcional | Lista periodos oficiais |
+| `getSpreadsheetData` | `period=AAAA-MM` | Retorna linhas normalizadas |
+| `getDashboard` | `period=AAAA-MM` | Contrato completo consumido pelo dashboard |
+| `getIndicators` | `refresh=1` opcional | Catalogo de perguntas e indicadores |
+| `getCharts` | `period=AAAA-MM` | Distribuicoes por pergunta |
+| `getFilters` | `period=AAAA-MM` | Valores de DRE, municipio, escola e tecnico |
+| `getStatistics` | `period=AAAA-MM` | Estatisticas consolidadas |
+| `getMetadata` | `refresh=1` opcional | Metadados do catalogo |
+| `compare` | `periodA`, `periodB` | Compara formularios entre periodos |
 
-Exemplo de cabecalho recomendado:
+Aliases mantidos: `catalog`, `periods`, `period`, `questions` e `question-catalog`.
 
-```text
-1.1 - A escola realizou planejamento pedagogico no mes?
-```
+## Descoberta e validacao
+
+A API busca apenas arquivos Google Sheets diretamente na pasta oficial. Atalhos, documentos, PDFs, imagens, arquivos na lixeira, temporarios, backups e o catalogo tecnico `AP_CATALOGO_SISTEMA` sao descartados.
+
+Formatos de periodo aceitos:
+
+- `Janeiro 2026`
+- `Jan-2026`
+- `01-2026`
+- `AP Janeiro 2026`
+- `AP_2026_01`
+- `Acompanhamento_2026_01`
+
+Uma planilha somente entra no seletor quando possui nome compativel, periodo identificavel, aba de respostas legivel, cabecalho valido, perguntas e registros. Arquivos invalidos ficam apenas no diagnostico do monitor.
+
+## Leitura e normalizacao
+
+A melhor aba e escolhida pela estrutura e pelos nomes preferenciais. A linha de cabecalho e detectada nas linhas iniciais. Datas sao convertidas para ISO, numeros sao preservados, valores nulos viram string vazia e linhas totalmente vazias sao removidas.
+
+Campos institucionais conhecidos sao normalizados, por exemplo `DRE -> dre`, `Municipio -> municipio` e `Nome da Escola -> escola`. Cabecalhos das perguntas sao preservados para manter rastreabilidade.
+
+## Cache
+
+Catalogo, periodos, dashboard, filtros, graficos, indicadores, estatisticas e metadados usam `CacheService` por cinco minutos. Respostas grandes sao fragmentadas. `refresh=1` invalida todas as chaves registradas antes da nova leitura.
+
+## Testes de homologacao
+
+1. Chame `?action=healthcheck` e confirme `API operacional`.
+2. Chame `?action=listSpreadsheets&refresh=1` e confira os meses.
+3. Teste cada periodo com `getDashboard` e `getSpreadsheetData`.
+4. Confira filtros, graficos, indicadores, estatisticas e metadados.
+5. Adicione uma nova planilha mensal valida e confirme a descoberta sem alterar codigo.
+6. Teste arquivo temporario, nome invalido, aba ausente, planilha vazia e falta de permissao.
+7. Confirme que o frontend exibe o erro e nao troca silenciosamente para o mock.

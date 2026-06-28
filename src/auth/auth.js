@@ -5,6 +5,7 @@ export function isAuthenticated() {
 }
 
 export function login(username, password) {
+  if (!appConfig.accessConfigured) return false;
   const valid = username === appConfig.defaultCredentials.username && password === appConfig.defaultCredentials.password;
   if (valid) {
     localStorage.setItem(appConfig.storageKey, 'true');

@@ -1,13 +1,51 @@
 [
   {
+    "id": "2026-fevereiro",
+    "year": 2026,
+    "month": "Fevereiro",
+    "name": "Fevereiro/2026",
+    "label": "Fevereiro/2026",
+    "description": "Periodo historico usado exclusivamente pelo modo mock.",
+    "active": true,
+    "lastUpdated": ""
+  },
+  {
+    "id": "2026-marco",
+    "year": 2026,
+    "month": "Marco",
+    "name": "Marco/2026",
+    "label": "Marco/2026",
+    "description": "Periodo historico usado exclusivamente pelo modo mock.",
+    "active": true,
+    "lastUpdated": ""
+  },
+  {
+    "id": "2026-abril",
+    "year": 2026,
+    "month": "Abril",
+    "name": "Abril/2026",
+    "label": "Abril/2026",
+    "description": "Periodo historico usado exclusivamente pelo modo mock.",
+    "active": true,
+    "lastUpdated": ""
+  },
+  {
+    "id": "2026-maio",
+    "year": 2026,
+    "month": "Maio",
+    "name": "Maio/2026",
+    "label": "Maio/2026",
+    "description": "Periodo historico usado exclusivamente pelo modo mock.",
+    "active": true,
+    "lastUpdated": ""
+  },
+  {
     "id": "2026-junho",
     "year": 2026,
     "month": "Junho",
     "name": "Junho/2026",
     "label": "Junho/2026",
-    "spreadsheetId": "INSERIR_ID_REAL_DA_PLANILHA_DE_JUNHO",
-    "sheetName": "Respostas ao formulário 1",
-    "description": "Substitua o campo spreadsheetId pelo ID real da planilha de Junho/2026 antes de ativar dados reais.",
+    "description": "Periodo local usado exclusivamente pelo modo mock.",
     "active": true,
     "lastUpdated": ""
   },
@@ -17,8 +55,6 @@
     "month": "Julho",
     "name": "Julho/2026",
     "label": "Julho/2026",
-    "spreadsheetId": "INSERIR_ID_DA_PLANILHA_DE_JULHO",
-    "sheetName": "Respostas ao formulário 1",
     "description": "",
     "active": false,
     "lastUpdated": ""
@@ -29,8 +65,6 @@
     "month": "Agosto",
     "name": "Agosto/2026",
     "label": "Agosto/2026",
-    "spreadsheetId": "INSERIR_ID_DA_PLANILHA_DE_AGOSTO",
-    "sheetName": "Respostas ao formulário 1",
     "description": "",
     "active": false,
     "lastUpdated": ""

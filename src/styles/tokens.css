@@ -1,0 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+:root {
+  color-scheme: light;
+  --color-primary: #0072ce;
+  --color-primary-text: #0064b5;
+  --color-primary-rgb: 0 114 206;
+  --color-primary-hover: #005ea8;
+  --color-primary-soft: #e5f3ff;
+  --color-primary-border: #8dccff;
+  --color-secondary: #4f6d8a;
+  --color-bg: #f4f7fa;
+  --color-bg-accent: #eef7ff;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f8fafc;
+  --color-text: #26323f;
+  --color-text-strong: #102033;
+  --color-text-muted: #5b6675;
+  --color-border: #d9e0e8;
+  --color-border-strong: #bdc9d6;
+  --color-sidebar: #003f70;
+  --color-sidebar-hover: #005a9c;
+  --color-sidebar-text: #eaf5ff;
+  --color-sidebar-muted: #b8d5ea;
+  --color-sidebar-accent: #7fc8ff;
+  --color-success: #247a5a;
+  --color-success-soft: #edf9f4;
+  --color-warning: #925f0a;
+  --color-warning-soft: #fff8e6;
+  --color-error: #b4232d;
+  --color-error-soft: #fff0f1;
+  --color-focus: rgba(0, 114, 206, 0.28);
+  --color-overlay: rgba(15, 35, 55, 0.12);
+  --shadow-soft: 0 12px 32px rgba(0, 63, 112, 0.08);
+  --shadow-raised: 0 18px 50px rgba(0, 63, 112, 0.13);
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --font-ui: "Outfit", Arial, sans-serif;
+  --font-technical: "JetBrains Mono", Consolas, monospace;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --color-primary-hover: #1591ef;
+  --color-primary-text: #6ec1ff;
+  --color-primary-soft: #123958;
+  --color-primary-border: #26648f;
+  --color-secondary: #9bb7cf;
+  --color-bg: #0b1220;
+  --color-bg-accent: #0f1e2d;
+  --color-surface: #131e2f;
+  --color-surface-muted: #182538;
+  --color-text: #dce7f3;
+  --color-text-strong: #f8fafc;
+  --color-text-muted: #a9b7c8;
+  --color-border: #2b3c52;
+  --color-border-strong: #40546c;
+  --color-sidebar: #07101d;
+  --color-sidebar-hover: #123958;
+  --color-sidebar-text: #eef7ff;
+  --color-sidebar-muted: #9eb8cc;
+  --color-sidebar-accent: #55b8ff;
+  --color-success: #64d3aa;
+  --color-success-soft: #12372f;
+  --color-warning: #f6c453;
+  --color-warning-soft: #3d3118;
+  --color-error: #ff8790;
+  --color-error-soft: #441f26;
+  --color-focus: rgba(73, 174, 255, 0.42);
+  --color-overlay: rgba(0, 0, 0, 0.36);
+  --shadow-soft: 0 12px 32px rgba(0, 0, 0, 0.24);
+  --shadow-raised: 0 18px 50px rgba(0, 0, 0, 0.34);
+}

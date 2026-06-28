@@ -2,13 +2,14 @@ const filterLabels = {
   dre: 'DRE',
   municipio: 'Municipio',
   escola: 'Escola',
+  tecnico: 'Tecnico',
   section: 'Eixo',
   questionKey: 'Pergunta',
   drillAnswer: 'Drill-down'
 };
 
 export function hasActiveFilters(state) {
-  return ['dre', 'municipio', 'escola', 'section', 'questionKey', 'drillAnswer'].some((field) => Boolean(state[field]));
+  return ['dre', 'municipio', 'escola', 'tecnico', 'section', 'questionKey', 'drillAnswer'].some((field) => Boolean(state[field]));
 }
 
 export function renderActiveFilters(container, state, question) {

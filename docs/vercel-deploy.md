@@ -24,16 +24,20 @@ Em `Settings > Environment Variables`, cadastre:
 
 ```text
 VITE_USE_MOCK_DATA=false
-VITE_GOOGLE_APPS_SCRIPT_ENDPOINT=https://script.google.com/macros/s/SEU_DEPLOYMENT_ID/exec
+VITE_GOOGLE_APPS_SCRIPT_URL=https://script.google.com/macros/s/SEU_DEPLOYMENT_ID/exec
 VITE_ENABLE_DEBUG_LOGS=false
+VITE_ADMIN_USERNAME=admin
+VITE_ADMIN_PASSWORD=SUBSTITUIR_POR_UMA_SENHA_FORTE
 ```
 
 Para um deploy de homologacao com dados mockados:
 
 ```text
 VITE_USE_MOCK_DATA=true
-VITE_GOOGLE_APPS_SCRIPT_ENDPOINT=
+VITE_GOOGLE_APPS_SCRIPT_URL=
 VITE_ENABLE_DEBUG_LOGS=false
+VITE_ADMIN_USERNAME=admin
+VITE_ADMIN_PASSWORD=SUBSTITUIR_POR_UMA_SENHA_FORTE
 ```
 
 Nao coloque endpoint real em arquivos versionados. Use variaveis da Vercel.
@@ -59,15 +63,16 @@ Checklist minimo:
 
 - Login local funciona.
 - Dashboard abre sem erro.
-- Periodo Junho/2026 aparece.
-- `Configuracoes > Planilhas` abre.
-- `Testar Conexao` funciona quando endpoint e planilha real estao configurados.
+- Os periodos da pasta oficial aparecem automaticamente.
+- `Monitor de planilhas` abre sem expor IDs internos.
+- `Atualizar catalogo` detecta novas planilhas.
 - Filtros, graficos, drill-down e exportacoes funcionam.
 - Impressao abre o layout correto.
 
 ## 7. Observacoes
 
-- `src/config/spreadsheets.json` contem apenas a configuracao inicial.
-- Alteracoes feitas em `Configuracoes > Planilhas` ficam no armazenamento local do navegador.
-- Para compartilhar configuracoes entre computadores, use `Exportar Configuracao` e `Importar Configuracao`.
-- O aviso de bundle grande pode aparecer por causa de `xlsx`, `jsPDF` e dependencias de exportacao. Ele nao impede o deploy.
+- `src/config/spreadsheets.json` e usado apenas pelo modo mock.
+- Em producao, o Apps Script gera o catalogo diretamente a partir da pasta oficial.
+- IDs da pasta e das planilhas nao fazem parte do contrato enviado ao frontend.
+- Excel e PDF sao carregados sob demanda para manter o pacote inicial abaixo do limite de aviso do Vite.
+- O login local e uma barreira de interface. A protecao dos dados deve continuar sendo garantida pelas permissoes do Google Drive e pelo acesso ao Web App do Apps Script.

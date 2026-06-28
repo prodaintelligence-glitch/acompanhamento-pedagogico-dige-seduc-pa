@@ -76,6 +76,23 @@ export function exportReportToPdf(report) {
   y = addKeyValueRows(doc, 'Resumo executivo', buildExecutiveSummary(report), y + 3);
   y = addKeyValueRows(doc, 'Filtros aplicados', Object.entries(report.filters).map(([Filtro, Valor]) => ({ Filtro, Valor })), y);
 
+  if (report.historicalAnalysis) {
+    y = addKeyValueRows(doc, 'Indicadores estrategicos', report.historicalAnalysis.strategic.map((item) => ({ Indicador: item.label, Valor: item.value })), y);
+    if (report.historicalAnalysis.comparison) {
+      const comparison = report.historicalAnalysis.comparison;
+      y = addSimpleTable(doc, `Comparativo ${comparison.periodA.label} x ${comparison.periodB.label}`, [
+        { Medida: 'Registros', PeriodoA: comparison.periodA.rows, PeriodoB: comparison.periodB.rows, Variacao: `${comparison.recordsDelta}%` },
+        { Medida: 'Escolas', PeriodoA: comparison.periodA.schools, PeriodoB: comparison.periodB.schools, Variacao: comparison.schoolsDelta },
+        { Medida: 'Indice positivo', PeriodoA: `${comparison.periodA.positiveRate}%`, PeriodoB: `${comparison.periodB.positiveRate}%`, Variacao: `${comparison.positiveRateDelta} p.p.` }
+      ], y, 8);
+    }
+    y = addSimpleTable(doc, 'Pontos de atencao historicos', report.historicalAnalysis.criticalQuestions.map((item) => ({
+      Pergunta: item.title,
+      Negativas: `${item.negativeRate}%`,
+      EmBranco: item.blanks
+    })), y, 8);
+  }
+
   if (report.question) {
     y = ensurePage(doc, y);
     doc.setFontSize(12);

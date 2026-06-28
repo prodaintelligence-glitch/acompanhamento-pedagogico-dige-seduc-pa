@@ -11,12 +11,13 @@ function appliedFilters(state, question) {
     DRE: state.dre || 'Todas',
     Municipio: state.municipio || 'Todos',
     Escola: state.escola || 'Todas',
+    Tecnico: state.tecnico || 'Todos',
     Eixo: state.section || 'Todos',
     Pergunta: question ? `${question.code} - ${question.title}` : 'Todas'
   };
 }
 
-export function buildReport({ rows, questions, state, period, updatedAt }) {
+export function buildReport({ rows, questions, state, period, updatedAt, historicalAnalysis = null }) {
   const filteredRows = applyFilters(rows, state);
   const question = questions.find((item) => item.key === state.questionKey) ?? questions[0] ?? null;
   const questionType = question ? detectQuestionType(filteredRows, question.key) : 'empty';
@@ -48,6 +49,7 @@ export function buildReport({ rows, questions, state, period, updatedAt }) {
     questionMetrics,
     mainMetrics,
     drillAnswer: state.drillAnswer,
+    historicalAnalysis,
     updatedAt
   };
 }

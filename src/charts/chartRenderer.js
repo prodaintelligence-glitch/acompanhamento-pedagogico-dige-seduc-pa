@@ -54,6 +54,10 @@ export function renderQuestionChart(canvas, question, chartConfig, distribution,
   hideChartMessage(canvas);
 
   const chartType = chartConfig.chartType === 'line' ? 'line' : chartConfig.chartType;
+  const styles = getComputedStyle(document.documentElement);
+  const textColor = styles.getPropertyValue('--color-text-muted').trim();
+  const gridColor = styles.getPropertyValue('--color-border').trim();
+  const surfaceColor = styles.getPropertyValue('--color-surface').trim();
 
   try {
     activeChart = new Chart(canvas, {
@@ -64,8 +68,8 @@ export function renderQuestionChart(canvas, question, chartConfig, distribution,
         maintainAspectRatio: false,
         indexAxis: chartConfig.indexAxis ?? 'x',
         plugins: {
-          legend: { position: chartType === 'doughnut' ? 'bottom' : 'top' },
-          tooltip: { intersect: false }
+          legend: { position: chartType === 'doughnut' ? 'bottom' : 'top', labels: { color: textColor } },
+          tooltip: { intersect: false, backgroundColor: surfaceColor, titleColor: textColor, bodyColor: textColor, borderColor: gridColor, borderWidth: 1 }
         },
         onClick: (_, elements) => {
           const answer = getClickedCategory(elements, labels);
@@ -75,8 +79,8 @@ export function renderQuestionChart(canvas, question, chartConfig, distribution,
         scales: chartType === 'doughnut'
           ? undefined
           : {
-              x: { beginAtZero: true, ticks: { precision: 0 } },
-              y: { beginAtZero: true, ticks: { precision: 0 } }
+              x: { beginAtZero: true, ticks: { precision: 0, color: textColor }, grid: { color: gridColor } },
+              y: { beginAtZero: true, ticks: { precision: 0, color: textColor }, grid: { color: gridColor } }
             }
       }
     });

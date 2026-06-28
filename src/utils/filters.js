@@ -4,6 +4,6 @@
 
 export function applyFilters(rows, filters) {
   return rows.filter((row) => {
-    return ['dre', 'municipio', 'escola'].every((field) => !filters[field] || row[field] === filters[field]);
+    return ['dre', 'municipio', 'escola', 'tecnico'].every((field) => !filters[field] || row[field] === filters[field]);
   });
 }

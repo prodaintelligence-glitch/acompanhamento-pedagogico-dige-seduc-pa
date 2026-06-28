@@ -1,31 +1,22 @@
+import './styles/tokens.css';
 import './styles/main.css';
 import { isAuthenticated, login, logout } from './auth/auth.js';
-import { fetchResponsesForPeriod } from './services/dataService.js';
+import { fetchPeriodCatalog, fetchQuestionCatalog, fetchResponsesForPeriod } from './services/dataService.js';
+import { clearHistoricalDataCache, fetchHistoricalDataset } from './services/historicalDataService.js';
 import { renderSpreadsheetAdminPage } from './admin/components/SpreadsheetAdminPage.js';
-import {
-  exportSpreadsheetConfigs,
-  importSpreadsheetConfigs,
-  loadSpreadsheetCache,
-  loadSpreadsheetConfigs,
-  loadSyncLog,
-  removeSpreadsheetConfig,
-  testSpreadsheetConnection,
-  upsertSpreadsheetConfig
-} from './admin/services/spreadsheetAdminService.js';
 import { clearQuestionChart, renderQuestionChart } from './charts/chartRenderer.js';
 import { renderMetricCards } from './components/cards.js';
 import { renderActiveFilters } from './components/activeFilters.js';
 import { renderAnalysisBreadcrumb } from './components/analysisBreadcrumb.js';
 import { renderDrillDownTable } from './components/drillDownTable.js';
 import { renderFilters } from './components/filters.js';
+import { renderHistoricalAnalysis } from './components/historicalAnalysis.js';
 import { renderLogin, renderShell, showStatus } from './components/layout.js';
 import { renderQuestionInfoCards } from './components/questionInfoCards.js';
 import { renderReportActions } from './components/reportActions.js';
 import { renderSmartMessages } from './components/smartMessages.js';
 import { renderStatisticalPanel } from './components/statisticalPanel.js';
 import { renderSummaryTable, renderTextAnswers } from './components/table.js';
-import { exportReportToExcel } from './reports/exportExcel.js';
-import { exportReportToPdf } from './reports/exportPdf.js';
 import { printReport } from './reports/printReport.js';
 import { buildReport } from './reports/reportBuilder.js';
 import { detectBestChartType } from './utils/chartTypeDetector.js';
@@ -36,17 +27,23 @@ import { clearAnalysisCache, createCacheKey, getCachedCalculation } from './util
 import { buildSmartIndicators } from './utils/smartIndicators.js';
 import { buildSmartMessages } from './utils/smartMessages.js';
 import { getDistribution, getLatestTimestamp, getQuestionMetrics } from './utils/statistics.js';
+import { buildHistoricalAnalysis, getHistoricalEntityOptions } from './utils/historicalAnalytics.js';
+import { initializeTheme } from './utils/theme.js';
+
+initializeTheme();
 
 const app = document.querySelector('#app');
-let spreadsheetConfigs = loadSpreadsheetConfigs();
-const firstPeriod = spreadsheetConfigs.find((item) => item.active !== false) ?? spreadsheetConfigs[0];
+let spreadsheetConfigs = [];
+let catalogMetadata = null;
+let questionCatalogState = null;
 
 const state = {
-  year: firstPeriod?.year ?? new Date().getFullYear(),
-  month: firstPeriod?.month ?? '',
+  year: new Date().getFullYear(),
+  month: '',
   dre: '',
   municipio: '',
   escola: '',
+  tecnico: '',
   section: '',
   questionKey: '',
   drillAnswer: ''
@@ -56,8 +53,11 @@ let rows = [];
 let questions = [];
 let updatedAt = '';
 let currentView = 'dashboard';
-let selectedAdminSpreadsheetId = firstPeriod?.id ?? '';
-let lastTestResult = null;
+let historicalDataset = [];
+let historicalLoading = false;
+let historicalError = '';
+let currentHistoricalAnalysis = null;
+const historicalControls = { periodA: '', periodB: '', dimension: 'dre', entityA: '', entityB: '' };
 
 function selectedSpreadsheet() {
   return spreadsheetConfigs.find((item) => item.active !== false && item.year === Number(state.year) && item.month === state.month);
@@ -72,10 +72,51 @@ async function loadData() {
   clearAnalysisCache();
   rows = result.rows;
   updatedAt = result.updatedAt;
-  questions = detectQuestions(rows);
+  questions = result.questions?.length ? result.questions : detectQuestions(rows);
 
   if (!questions.some((question) => question.key === state.questionKey)) {
     state.questionKey = questions[0]?.key ?? '';
+  }
+}
+
+async function loadCatalog(options = {}) {
+  const result = await fetchPeriodCatalog(options);
+  spreadsheetConfigs = result.periods ?? [];
+  catalogMetadata = result.metadata ?? null;
+
+  if (!selectedSpreadsheet()) {
+    const selected = result.selectedPeriod ?? firstActiveSpreadsheet();
+    state.year = selected?.year ?? state.year;
+    state.month = selected?.month ?? '';
+  }
+
+  if (!spreadsheetConfigs.length) {
+    throw new Error('Nenhum periodo valido foi encontrado na pasta oficial.');
+  }
+}
+
+async function loadQuestionEvolution(options = {}) {
+  questionCatalogState = await fetchQuestionCatalog(options);
+}
+
+async function loadHistoricalData(options = {}) {
+  historicalLoading = true;
+  historicalError = '';
+  renderHistoricalDashboard();
+  try {
+    if (!questionCatalogState) {
+      try {
+        await loadQuestionEvolution();
+      } catch {
+        questionCatalogState = null;
+      }
+    }
+    historicalDataset = await fetchHistoricalDataset(spreadsheetConfigs, options);
+  } catch (error) {
+    historicalError = error.message || 'Nao foi possivel carregar os dados historicos.';
+  } finally {
+    historicalLoading = false;
+    renderHistoricalDashboard();
   }
 }
 
@@ -83,6 +124,7 @@ function resetDataFilters() {
   state.dre = '';
   state.municipio = '';
   state.escola = '';
+  state.tecnico = '';
   state.section = '';
   state.questionKey = '';
   state.drillAnswer = '';
@@ -97,6 +139,7 @@ function clearDashboardFilters() {
   state.dre = '';
   state.municipio = '';
   state.escola = '';
+  state.tecnico = '';
   state.section = '';
   state.questionKey = questions[0]?.key ?? '';
   state.drillAnswer = '';
@@ -110,159 +153,62 @@ function currentReport() {
     questions,
     state,
     period: selectedSpreadsheet(),
-    updatedAt
+    updatedAt,
+    historicalAnalysis: currentHistoricalAnalysis
   });
 }
 
-function runReportAction(action) {
+async function runReportAction(action, loadingMessage) {
   try {
+    showStatus(loadingMessage, 'info');
     const report = currentReport();
-    action(report);
+    await action(report);
   } catch (error) {
     showStatus(error.message || 'Nao foi possivel concluir a acao solicitada.', 'error');
   }
 }
 
-function spreadsheetFromForm(data) {
-  const year = Number(data.get('year'));
-  const month = String(data.get('month') || '').trim();
-  const name = String(data.get('name') || '').trim();
-  const spreadsheetId = String(data.get('spreadsheetId') || '').trim();
-  const sheetName = String(data.get('sheetName') || '').trim();
-
-  if (!year || !month || !name || !spreadsheetId || !sheetName) {
-    throw new Error('Preencha ano, mes, nome, ID da planilha e nome da aba.');
-  }
-
-  const id = String(data.get('id') || `${year}-${month}`)
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-
-  return {
-    id,
-    year,
-    month,
-    name,
-    label: name,
-    spreadsheetId,
-    sheetName,
-    description: String(data.get('description') || '').trim(),
-    active: data.get('active') === 'on',
-    lastUpdated: new Date().toISOString()
-  };
-}
-
-function syncSpreadsheetConfigs(nextItems) {
-  spreadsheetConfigs = nextItems;
-  const selected = selectedSpreadsheet() ?? firstActiveSpreadsheet();
-  state.year = selected?.year ?? state.year;
-  state.month = selected?.month ?? state.month;
-  selectedAdminSpreadsheetId = selectedAdminSpreadsheetId || selected?.id || '';
-}
-
 function renderAdminView() {
-  const selectedItem = selectedAdminSpreadsheetId === '__new__'
-    ? null
-    : spreadsheetConfigs.find((item) => item.id === selectedAdminSpreadsheetId) ?? spreadsheetConfigs[0];
   renderSpreadsheetAdminPage(document.querySelector('#admin-root'), {
-    items: spreadsheetConfigs,
-    cache: loadSpreadsheetCache(),
-    logs: loadSyncLog(),
-    selectedItem,
-    testResult: lastTestResult,
-    onNew: () => {
-      selectedAdminSpreadsheetId = '__new__';
-      lastTestResult = null;
-      renderAdminView();
-    },
-    onSave: handleSaveSpreadsheet,
-    onTest: handleTestSpreadsheet,
-    onEdit: handleEditSpreadsheet,
-    onRemove: handleRemoveSpreadsheet,
-    onExport: exportSpreadsheetConfigs,
-    onImport: handleImportSpreadsheetConfigs,
-    onRefreshDashboard: handleRefreshDashboard
+    items: catalogMetadata?.catalog ?? spreadsheetConfigs,
+    metadata: catalogMetadata,
+    questionCatalog: questionCatalogState,
+    onRefresh: handleRefreshCatalog
   });
 }
 
-function showView(view) {
+async function showView(view) {
   currentView = view;
   document.querySelector('#dashboard-root').hidden = view !== 'dashboard';
   document.querySelector('#admin-root').hidden = view !== 'admin';
-  document.querySelector('#page-title').textContent = view === 'admin' ? 'Configurações de planilhas' : 'Dashboard pedagogico';
-  if (view === 'admin') renderAdminView();
-  else renderDashboard();
-}
-
-async function handleSaveSpreadsheet(data) {
-  try {
-    const item = spreadsheetFromForm(data);
-    syncSpreadsheetConfigs(upsertSpreadsheetConfig(item));
-    selectedAdminSpreadsheetId = item.id;
-    showStatus('Planilha salva. Meses, filtros e dashboard foram atualizados.', 'success');
-    await reloadDashboardData();
-    showView('admin');
-  } catch (error) {
-    showStatus(error.message || 'Nao foi possivel salvar a planilha.', 'error');
-  }
-}
-
-async function handleTestSpreadsheet(input) {
-  try {
-    const item = input instanceof FormData ? spreadsheetFromForm(input) : input;
-    lastTestResult = await testSpreadsheetConnection(item);
-    selectedAdminSpreadsheetId = item.id;
-    showStatus(lastTestResult.success ? 'Conexao testada com sucesso.' : 'Nao foi possivel acessar esta planilha.', lastTestResult.success ? 'success' : 'error');
+  document.querySelector('#page-title').textContent = view === 'admin' ? 'Monitor de planilhas' : 'Dashboard pedagogico';
+  if (view === 'admin') {
     renderAdminView();
-  } catch (error) {
-    showStatus(error.message || 'Nao foi possivel testar a conexao.', 'error');
+    try {
+      showStatus('Atualizando catalogo de perguntas...', 'info');
+      await loadQuestionEvolution();
+      renderAdminView();
+      hideInfoStatus();
+    } catch (error) {
+      showStatus(error.message || 'Nao foi possivel carregar a evolucao dos formularios.', 'error');
+    }
+  } else {
+    renderDashboard();
   }
 }
 
-function handleEditSpreadsheet(id) {
-  selectedAdminSpreadsheetId = id;
-  lastTestResult = loadSpreadsheetCache()[id] ?? null;
-  renderAdminView();
-}
-
-async function handleRemoveSpreadsheet(id) {
+async function handleRefreshCatalog() {
   try {
-    if (!window.confirm('Remover esta configuracao de planilha?')) return;
-    syncSpreadsheetConfigs(removeSpreadsheetConfig(id));
-    selectedAdminSpreadsheetId = firstActiveSpreadsheet()?.id ?? spreadsheetConfigs[0]?.id ?? '';
-    showStatus('Configuracao removida.', 'success');
-    await reloadDashboardData();
-    showView('admin');
-  } catch (error) {
-    showStatus(error.message || 'Nao foi possivel remover a planilha.', 'error');
-  }
-}
-
-async function handleImportSpreadsheetConfigs(file) {
-  if (!file) return;
-  try {
-    syncSpreadsheetConfigs(await importSpreadsheetConfigs(file));
-    selectedAdminSpreadsheetId = firstActiveSpreadsheet()?.id ?? spreadsheetConfigs[0]?.id ?? '';
-    showStatus('Configuracao importada com sucesso.', 'success');
-    await reloadDashboardData();
-    showView('admin');
-  } catch (error) {
-    showStatus(error.message || 'Nao foi possivel importar a configuracao.', 'error');
-  }
-}
-
-async function handleRefreshDashboard() {
-  try {
-    const item = selectedSpreadsheet() ?? firstActiveSpreadsheet();
-    if (item) lastTestResult = await testSpreadsheetConnection(item);
-    await reloadDashboardData();
-    showStatus('Dados atualizados sem reiniciar a aplicacao.', 'success');
+    showStatus('Atualizando catalogo da pasta oficial...', 'info');
+    await loadCatalog({ refresh: true });
+    await loadQuestionEvolution({ refresh: true });
+    clearHistoricalDataCache();
+    historicalDataset = [];
+    await reloadDashboardData({ refreshHistorical: true });
+    showStatus('Catalogo e dashboard atualizados com sucesso.', 'success');
     if (currentView === 'admin') renderAdminView();
   } catch (error) {
-    showStatus(error.message || 'Nao foi possivel atualizar os dados.', 'error');
+    showStatus(error.message || 'Nao foi possivel atualizar o catalogo.', 'error');
   }
 }
 
@@ -291,6 +237,65 @@ async function updateState(key, value) {
   }
 
   renderDashboard();
+}
+
+function ensureHistoricalControls() {
+  const scopedDataset = historicalDataset.filter((item) => !item.error && (!state.year || item.period.year === Number(state.year)));
+  const periods = scopedDataset.map((item) => ({
+    periodKey: item.period.periodKey || item.period.id,
+    label: item.period.label
+  }));
+  const keys = periods.map((period) => period.periodKey);
+  if (!keys.includes(historicalControls.periodB)) historicalControls.periodB = keys.at(-1) ?? '';
+  if (!keys.includes(historicalControls.periodA)) historicalControls.periodA = keys.at(-2) ?? keys.at(-1) ?? '';
+  const entityOptions = getHistoricalEntityOptions(scopedDataset, historicalControls.dimension, state);
+  if (!entityOptions.includes(historicalControls.entityA)) historicalControls.entityA = entityOptions[0] ?? '';
+  if (!entityOptions.includes(historicalControls.entityB)) historicalControls.entityB = entityOptions[1] ?? entityOptions[0] ?? '';
+  return { periods, entityOptions };
+}
+
+function handleHistoricalControl(key, value) {
+  historicalControls[key] = value;
+  if (key === 'dimension') {
+    historicalControls.entityA = '';
+    historicalControls.entityB = '';
+  }
+  renderHistoricalDashboard();
+}
+
+function renderHistoricalDashboard() {
+  const container = document.querySelector('#historical-analysis');
+  if (!container) return;
+  if (historicalLoading || historicalError || !historicalDataset.length) {
+    renderHistoricalAnalysis(container, {
+      analysis: null,
+      periods: [],
+      controls: historicalControls,
+      entityOptions: [],
+      loading: historicalLoading,
+      error: historicalError,
+      onChange: handleHistoricalControl
+    });
+    return;
+  }
+  const { periods, entityOptions } = ensureHistoricalControls();
+  const historyKey = createCacheKey(
+    'historical-analysis',
+    historicalDataset.map((item) => `${item.period.periodKey || item.period.id}:${item.updatedAt}:${item.rows.length}`).join('|'),
+    state.dre,
+    state.municipio,
+    state.escola,
+    state.tecnico,
+    historicalControls
+  );
+  currentHistoricalAnalysis = getCachedCalculation(historyKey, () => buildHistoricalAnalysis(historicalDataset, state, historicalControls));
+  renderHistoricalAnalysis(container, {
+    analysis: currentHistoricalAnalysis,
+    periods,
+    controls: historicalControls,
+    entityOptions,
+    onChange: handleHistoricalControl
+  });
 }
 
 function renderQuestionMetrics(container, metrics, chartConfig) {
@@ -403,7 +408,7 @@ function renderQuestionAnalysis(filteredRows) {
 }
 
 function renderDashboard() {
-  const filterKey = createCacheKey('filtered-rows', updatedAt, rows.length, state.year, state.month, state.dre, state.municipio, state.escola);
+  const filterKey = createCacheKey('filtered-rows', updatedAt, rows.length, state.year, state.month, state.dre, state.municipio, state.escola, state.tecnico);
   const filteredRows = getCachedCalculation(filterKey, () => applyFilters(rows, state));
   const question = questions.find((item) => item.key === state.questionKey) ?? questions[0] ?? null;
   const indicatorsKey = createCacheKey('smart-indicators', updatedAt, filteredRows.length, questions.length, state);
@@ -416,39 +421,47 @@ function renderDashboard() {
     drillAnswer: state.drillAnswer
   });
   renderReportActions(document.querySelector('#report-actions'), {
-    onExportExcel: () => runReportAction((report) => {
+    onExportExcel: () => runReportAction(async (report) => {
+      const { exportReportToExcel } = await import('./reports/exportExcel.js');
       exportReportToExcel(report);
       showStatus('Arquivo Excel gerado com sucesso.', 'success');
-    }),
-    onExportPdf: () => runReportAction((report) => {
+    }, 'Preparando exportacao para Excel...'),
+    onExportPdf: () => runReportAction(async (report) => {
+      const { exportReportToPdf } = await import('./reports/exportPdf.js');
       exportReportToPdf(report);
       showStatus('Arquivo PDF gerado com sucesso.', 'success');
-    }),
+    }, 'Preparando arquivo PDF...'),
     onPrint: () => runReportAction((report) => {
       if (!report.filteredRows.length) throw new Error('Nao ha dados filtrados para imprimir.');
       printReport();
-    }),
+      showStatus('Relatorio preparado para impressao.', 'success');
+    }, 'Preparando visualizacao para impressao...'),
     onClearFilters: clearDashboardFilters
   });
   renderFilters(document.querySelector('#filters'), state, rows, questions, updateState, spreadsheetConfigs);
   renderActiveFilters(document.querySelector('#active-filters'), state, question);
   renderMetricCards(document.querySelector('#metrics'), smartIndicators);
   renderQuestionAnalysis(filteredRows);
+  renderHistoricalDashboard();
 }
 
 function hideInfoStatus() {
   const element = document.querySelector('#status-message');
   if (element && element.dataset.type === 'info') {
     element.hidden = true;
+    element.setAttribute('aria-busy', 'false');
+    document.querySelector('#dashboard-root')?.setAttribute('aria-busy', 'false');
+    document.querySelector('#admin-root')?.setAttribute('aria-busy', 'false');
   }
 }
 
-async function reloadDashboardData() {
+async function reloadDashboardData({ refreshHistorical = false } = {}) {
   try {
     showStatus('Carregando dados do periodo selecionado...', 'info');
     await loadData();
     hideInfoStatus();
     renderDashboard();
+    if (!historicalDataset.length || refreshHistorical) await loadHistoricalData({ force: refreshHistorical });
   } catch (error) {
     rows = [];
     questions = [];
@@ -467,8 +480,18 @@ async function startDashboard() {
     onNavigate: showView
   });
 
-  await reloadDashboardData();
-  showView('dashboard');
+  try {
+    showStatus('Localizando planilhas na pasta oficial...', 'info');
+    await loadCatalog();
+    await reloadDashboardData();
+    showView('dashboard');
+  } catch (error) {
+    rows = [];
+    questions = [];
+    updatedAt = '';
+    renderDashboard();
+    showStatus(error.message || 'Nao foi possivel iniciar a plataforma.', 'error');
+  }
 }
 
 function startLogin() {
@@ -484,3 +507,9 @@ if (isAuthenticated()) {
 } else {
   startLogin();
 }
+
+document.addEventListener('themechange', () => {
+  if (!isAuthenticated()) return;
+  if (currentView === 'admin') renderAdminView();
+  else renderDashboard();
+});

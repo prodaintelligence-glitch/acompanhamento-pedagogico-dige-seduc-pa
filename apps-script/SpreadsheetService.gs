@@ -38,16 +38,20 @@ function findResponseSheet(spreadsheet) {
   var sheets = spreadsheet.getSheets();
   if (!sheets.length) throw new Error('A planilha nao possui abas.');
 
-  var best = null;
-  sheets.forEach(function(sheet) {
-    var sample = readHeaderSample(sheet);
-    var header = findHeaderRow(sample.values);
-    var score = preferredSheetScore(sheet.getName())
-      + (header ? header.score : -100)
-      + Math.min(sample.lastRow || 0, 100) / 10;
-    if (!best || score > best.score) best = { sheet: sheet, score: score };
-  });
-  return best.sheet;
+  for (var preferredIndex = 0; preferredIndex < AP_CONFIG.PREFERRED_SHEET_NAMES.length; preferredIndex += 1) {
+    var preferredName = AP_CONFIG.PREFERRED_SHEET_NAMES[preferredIndex];
+    var configuredSheet = sheets.find(function(sheet) {
+      return normalizeText(sheet.getName()) === preferredName;
+    });
+    if (configuredSheet) return configuredSheet;
+  }
+
+  for (var sheetIndex = 0; sheetIndex < sheets.length; sheetIndex += 1) {
+    var sample = readHeaderSample(sheets[sheetIndex]);
+    if (findHeaderRow(sample.values)) return sheets[sheetIndex];
+  }
+
+  return sheets[0];
 }
 
 function buildColumnDescriptors(headers) {
@@ -55,11 +59,11 @@ function buildColumnDescriptors(headers) {
   return headers.map(function(header, index) {
     var originalHeader = normalizeHeader(header);
     var canonical = canonicalFieldName(originalHeader);
-    var baseKey = canonical || originalHeader || 'coluna_' + (index + 1);
+    var baseKey = canonical || normalizeHeaderKey(originalHeader) || 'coluna' + (index + 1);
     var key = baseKey;
     var suffix = 2;
     while (usedKeys[key]) {
-      key = baseKey + '__' + suffix;
+      key = baseKey + '_' + suffix;
       suffix += 1;
     }
     usedKeys[key] = true;
@@ -121,7 +125,8 @@ function buildQuestions(descriptors, rows) {
   });
 }
 
-function readSpreadsheetData(file) {
+function readSpreadsheetData(file, options) {
+  options = options || {};
   var spreadsheet;
   try {
     spreadsheet = SpreadsheetApp.openById(file.getId());
@@ -152,7 +157,9 @@ function readSpreadsheetData(file) {
     });
   var questions = buildQuestions(descriptors, rows);
 
-  if (!questions.length) throw new Error('Estrutura invalida: nenhuma pergunta identificada.');
+  if (!questions.length && options.requireQuestions !== false) {
+    throw new Error('Estrutura invalida: nenhuma pergunta identificada.');
+  }
   if (!rows.length) throw new Error('Planilha vazia: nenhum registro de resposta encontrado.');
 
   return {

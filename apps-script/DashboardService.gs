@@ -28,6 +28,7 @@ function buildSpreadsheetListData(refresh) {
 }
 
 function buildSpreadsheetData(params) {
+  if (params.spreadsheetId) return buildSpreadsheetDataById(params);
   return buildPeriodContract(requiredPeriod(params), params.refresh === '1');
 }
 

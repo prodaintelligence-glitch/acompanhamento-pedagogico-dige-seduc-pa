@@ -34,6 +34,7 @@ function getCatalogInternal() {
 function publicCatalogItem(item) {
   return {
     id: item.periodKey,
+    spreadsheetId: item.fileId,
     periodKey: item.periodKey,
     year: item.year,
     month: item.month,

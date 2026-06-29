@@ -58,7 +58,9 @@ Sucesso:
 ```json
 {
   "success": true,
-  "data": {},
+  "data": [],
+  "count": 0,
+  "metadata": {},
   "message": "",
   "timestamp": "2026-06-28T00:00:00.000Z"
 }
@@ -69,13 +71,14 @@ Erro:
 ```json
 {
   "success": false,
-  "error": "SPREADSHEET_ERROR",
-  "details": "Mensagem amigavel.",
+  "error": "Mensagem amigavel.",
+  "details": "Detalhe tecnico.",
+  "code": "SPREADSHEET_ERROR",
   "timestamp": "2026-06-28T00:00:00.000Z"
 }
 ```
 
-As respostas usam somente JSON e nao expõem IDs internos dos arquivos.
+Nas novas leituras por ID e consolidada, `data` e sempre uma lista e `metadata` descreve as origens. Os endpoints legados do dashboard preservam o objeto em `data` para compatibilidade. As respostas usam somente JSON. Os IDs das planilhas aparecem apenas nos contratos de leitura para permitir rastrear a origem de cada registro.
 
 ## Endpoints
 
@@ -83,7 +86,8 @@ As respostas usam somente JSON e nao expõem IDs internos dos arquivos.
 | --- | --- | --- |
 | `healthcheck` | nenhum | Verifica pasta e API |
 | `listSpreadsheets` | `refresh=1` opcional | Lista periodos oficiais |
-| `getSpreadsheetData` | `period=AAAA-MM` | Retorna linhas normalizadas |
+| `getSpreadsheetData` | `spreadsheetId=ID` ou `period=AAAA-MM` | Le uma planilha pelo ID; o periodo permanece como compatibilidade |
+| `getAllData` | `refresh=1` opcional | Consolida todas as planilhas legiveis da pasta oficial |
 | `getDashboard` | `period=AAAA-MM` | Contrato completo consumido pelo dashboard |
 | `getIndicators` | `refresh=1` opcional | Catalogo de perguntas e indicadores |
 | `getCharts` | `period=AAAA-MM` | Distribuicoes por pergunta |
@@ -111,9 +115,11 @@ Uma planilha somente entra no seletor quando possui nome compativel, periodo ide
 
 ## Leitura e normalizacao
 
-A melhor aba e escolhida pela estrutura e pelos nomes preferenciais. A linha de cabecalho e detectada nas linhas iniciais. Datas sao convertidas para ISO, numeros sao preservados, valores nulos viram string vazia e linhas totalmente vazias sao removidas.
+A aba e escolhida nesta ordem: nome configurado, primeira aba com cabecalho valido e primeira aba da planilha. A linha de cabecalho e detectada nas linhas iniciais. Datas sao convertidas para ISO, numeros sao preservados, valores nulos viram string vazia e linhas totalmente vazias sao removidas.
 
-Campos institucionais conhecidos sao normalizados, por exemplo `DRE -> dre`, `Municipio -> municipio` e `Nome da Escola -> escola`. Cabecalhos das perguntas sao preservados para manter rastreabilidade.
+Campos institucionais conhecidos sao normalizados, por exemplo `DRE -> dre`, `Municipio -> municipio` e `Nome da Escola -> escola`. Os demais cabecalhos usam camelCase sem acentos ou caracteres especiais; duplicados recebem sufixos numericos e colunas sem nome viram `colunaN`. O texto original das perguntas permanece no catalogo para manter rastreabilidade.
+
+No `getAllData`, cada linha recebe `sourceSpreadsheetId`, `sourceSpreadsheetName`, `sourceMonth`, `sourceYear` e `sourceSheetName`. Mes e ano ficam nulos quando nao puderem ser inferidos do nome. O retorno tambem informa `spreadsheetCount`, `count`, planilhas lidas e eventuais erros isolados; um arquivo invalido nao interrompe a leitura dos demais.
 
 ## Cache
 
@@ -124,7 +130,9 @@ Catalogo, periodos, dashboard, filtros, graficos, indicadores, estatisticas e me
 1. Chame `?action=healthcheck` e confirme `API operacional`.
 2. Chame `?action=listSpreadsheets&refresh=1` e confira os meses.
 3. Teste cada periodo com `getDashboard` e `getSpreadsheetData`.
-4. Confira filtros, graficos, indicadores, estatisticas e metadados.
-5. Adicione uma nova planilha mensal valida e confirme a descoberta sem alterar codigo.
-6. Teste arquivo temporario, nome invalido, aba ausente, planilha vazia e falta de permissao.
-7. Confirme que o frontend exibe o erro e nao troca silenciosamente para o mock.
+4. Teste uma planilha por ID com `getSpreadsheetData&spreadsheetId=ID_DA_PLANILHA`.
+5. Chame `getAllData&refresh=1` e confira `spreadsheetCount` e `count`.
+6. Confira filtros, graficos, indicadores, estatisticas e metadados.
+7. Adicione uma nova planilha mensal valida e confirme a descoberta sem alterar codigo.
+8. Teste arquivo temporario, nome invalido, aba ausente, planilha vazia e falta de permissao.
+9. Confirme que o frontend exibe o erro e nao troca silenciosamente para o mock.

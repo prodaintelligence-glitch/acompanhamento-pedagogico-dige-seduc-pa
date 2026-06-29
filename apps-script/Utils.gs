@@ -47,6 +47,18 @@ function normalizeHeader(value) {
   return String(value === null || value === undefined ? '' : value).trim();
 }
 
+function normalizeHeaderKey(value) {
+  var words = normalizeText(value)
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(function(word) { return word; });
+  if (!words.length) return '';
+  return words[0] + words.slice(1).map(function(word) {
+    return word.charAt(0).toUpperCase() + word.slice(1);
+  }).join('');
+}
+
 function normalizeCell(value) {
   if (Object.prototype.toString.call(value) === '[object Date]') return value.toISOString();
   if (typeof value === 'string') return value.trim();

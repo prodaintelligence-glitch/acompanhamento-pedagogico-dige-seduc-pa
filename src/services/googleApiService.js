@@ -4,7 +4,7 @@ const REQUEST_TIMEOUT_MS = 20000;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const ALLOWED_ACTIONS = new Set([
   'healthcheck', 'listSpreadsheets', 'getSpreadsheetData', 'getDashboard',
-  'getIndicators', 'getCharts', 'getFilters', 'getStatistics', 'getMetadata', 'compare'
+  'getAllData', 'getIndicators', 'getCharts', 'getFilters', 'getStatistics', 'getMetadata', 'compare'
 ]);
 const responseCache = new Map();
 const pendingRequests = new Map();
@@ -19,7 +19,9 @@ function validatePeriod(value, label = 'Periodo') {
 
 function validateActionParams(action, params) {
   if (!ALLOWED_ACTIONS.has(action)) throw new Error('Operacao de consulta invalida.');
-  if (['getSpreadsheetData', 'getDashboard', 'getCharts', 'getFilters', 'getStatistics'].includes(action)) {
+  if (action === 'getSpreadsheetData' && params.spreadsheetId) {
+    if (!/^[a-zA-Z0-9_-]{10,}$/.test(String(params.spreadsheetId))) throw new Error('ID da planilha invalido.');
+  } else if (['getSpreadsheetData', 'getDashboard', 'getCharts', 'getFilters', 'getStatistics'].includes(action)) {
     validatePeriod(params.period);
   }
   if (action === 'compare') {
@@ -28,13 +30,23 @@ function validateActionParams(action, params) {
   }
 }
 
-function validateResponse(action, payload) {
+function validateResponse(action, payload, params) {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
     throw new Error('A API retornou uma resposta inesperada.');
   }
   if (payload.success !== true) {
+    const message = typeof payload.error === 'string' ? payload.error.trim() : '';
     const detail = typeof payload.details === 'string' ? payload.details.trim() : '';
-    throw new Error(detail.slice(0, 240) || 'A API retornou um erro inesperado.');
+    throw new Error(message.slice(0, 240) || detail.slice(0, 240) || 'A API retornou um erro inesperado.');
+  }
+  const expectsRowsArray = action === 'getAllData' || (action === 'getSpreadsheetData' && params.spreadsheetId);
+  if (expectsRowsArray) {
+    if (!Array.isArray(payload.data)) throw new Error('Os dados retornados pela planilha estao incompletos.');
+    return {
+      ...(payload.metadata && typeof payload.metadata === 'object' ? payload.metadata : {}),
+      rows: payload.data,
+      count: Number(payload.count) || payload.data.length
+    };
   }
   if (!payload.data || typeof payload.data !== 'object' || Array.isArray(payload.data)) {
     throw new Error('A API retornou dados incompletos.');
@@ -87,7 +99,7 @@ export async function requestGoogleApi(action, params = {}, { refresh = false } 
       } catch {
         throw new Error('A API do Google Apps Script nao retornou JSON valido.');
       }
-      const data = validateResponse(action, payload);
+      const data = validateResponse(action, payload, params);
       responseCache.set(key, { createdAt: Date.now(), data });
       if (appConfig.enableDebugLogs) {
         console.info('[DIGE API]', { action, durationMs: Math.round(performance.now() - startedAt), records: data.rows?.length });
@@ -127,6 +139,14 @@ export function fetchGoogleSheetResponses({ periodKey, id }, { refresh = false }
 
 export function fetchSpreadsheetData(period, options = {}) {
   return requestGoogleApi('getSpreadsheetData', { period }, options);
+}
+
+export function fetchSpreadsheetDataById(spreadsheetId, options = {}) {
+  return requestGoogleApi('getSpreadsheetData', { spreadsheetId }, options);
+}
+
+export function fetchAllSpreadsheetData(options = {}) {
+  return requestGoogleApi('getAllData', {}, options);
 }
 
 export function fetchQuestionCatalog({ refresh = false } = {}) {

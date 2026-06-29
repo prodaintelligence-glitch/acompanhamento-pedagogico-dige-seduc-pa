@@ -12,7 +12,37 @@ function routeApiRequest(action, params) {
     return { data: buildSpreadsheetListData(refresh), message: 'Planilhas localizadas com sucesso.' };
   }
   if (action === 'getspreadsheetdata' || action === 'period') {
-    return { data: buildSpreadsheetData(params), message: 'Dados da planilha carregados com sucesso.' };
+    var spreadsheetData = buildSpreadsheetData(params);
+    if (params.spreadsheetId) {
+      return {
+        data: spreadsheetData.rows,
+        count: spreadsheetData.count,
+        metadata: {
+          spreadsheet: spreadsheetData.spreadsheet,
+          headers: spreadsheetData.headers,
+          headerRow: spreadsheetData.headerRow,
+          questions: spreadsheetData.questions,
+          updatedAt: spreadsheetData.updatedAt
+        },
+        message: 'Dados da planilha carregados com sucesso.'
+      };
+    }
+    return { data: spreadsheetData, message: 'Dados da planilha carregados com sucesso.' };
+  }
+  if (action === 'getalldata') {
+    var allData = buildAllData(params);
+    return {
+      data: allData.rows,
+      count: allData.count,
+      metadata: {
+        spreadsheets: allData.spreadsheets,
+        spreadsheetCount: allData.spreadsheetCount,
+        skippedSpreadsheetCount: allData.skippedSpreadsheetCount,
+        errors: allData.errors,
+        updatedAt: allData.updatedAt
+      },
+      message: 'Dados consolidados carregados com sucesso.'
+    };
   }
   if (action === 'getdashboard') {
     return { data: buildDashboardData(params), message: 'Dashboard carregado com sucesso.' };
@@ -50,7 +80,10 @@ function doGet(e) {
       period: params.period || '',
       elapsedMs: new Date().getTime() - startedAt
     });
-    return jsonResponse(successResponse(result.data, result.message));
+    return jsonResponse(successResponse(result.data, result.message, {
+      count: result.count,
+      metadata: result.metadata
+    }));
   } catch (error) {
     logApiEvent('error', action, {
       period: params.period || '',

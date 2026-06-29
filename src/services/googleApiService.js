@@ -1,6 +1,6 @@
 import { appConfig } from '../config/appConfig.js';
 
-const REQUEST_TIMEOUT_MS = 20000;
+const REQUEST_TIMEOUT_MS = 60000;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const ALLOWED_ACTIONS = new Set([
   'healthcheck', 'listSpreadsheets', 'getSpreadsheetData', 'getDashboard',
@@ -107,7 +107,7 @@ export async function requestGoogleApi(action, params = {}, { refresh = false } 
       return data;
     } catch (error) {
       debugError(`[DIGE API] Falha em ${action}`, error);
-      if (error.name === 'AbortError') throw new Error('A consulta demorou mais que o esperado. Tente novamente.');
+      if (error.name === 'AbortError') throw new Error('A consulta demorou mais que o esperado. Tente novamente em instantes.');
       if (error instanceof TypeError) throw new Error('Falha de rede ao acessar o Google Apps Script.');
       throw error;
     } finally {

@@ -3,6 +3,9 @@ const fieldAliases = {
   dre: ['dre', 'diretoria regional de ensino', 'regional'],
   municipio: ['municipio', 'município'],
   escola: ['escola', 'unidade escolar', 'nome da escola'],
+  tecnico: ['tecnico', 'tecnico responsavel', 'nome do tecnico'],
+  etapa: ['etapa', 'etapa de ensino', 'etapa/modalidade', 'etapa modalidade', 'etapamodalidade'],
+  modalidade: ['modalidade', 'modalidade de ensino'],
   cargo: ['cargo', 'funcao', 'função'],
   email: ['email', 'e-mail', 'endereco de e-mail', 'endereço de e-mail']
 };

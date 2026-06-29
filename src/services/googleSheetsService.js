@@ -2,6 +2,10 @@
 export {
   clearGoogleApiCache as clearGoogleSheetsCache,
   compareQuestionPeriods,
+  getAllData,
+  getSpreadsheetData,
+  healthcheck,
+  listSpreadsheets,
   fetchGoogleSheetResponses,
   fetchPeriodCatalog,
   fetchQuestionCatalog

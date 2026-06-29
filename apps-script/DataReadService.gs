@@ -100,6 +100,8 @@ function buildAllData(params) {
       spreadsheets.push(Object.assign({}, metadata, {
         count: data.rows.length,
         headerRow: data.headerRow,
+        headers: data.headers,
+        questions: data.questions,
         updatedAt: item.updatedAt
       }));
     } catch (error) {

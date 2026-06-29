@@ -1,7 +1,7 @@
 import './styles/tokens.css';
 import './styles/main.css';
 import { isAuthenticated, login, logout } from './auth/auth.js';
-import { fetchPeriodCatalog, fetchQuestionCatalog, fetchResponsesForPeriod } from './services/dataService.js';
+import { checkDataSource, fetchPeriodCatalog, fetchQuestionCatalog, fetchResponsesForPeriod } from './services/dataService.js';
 import { clearHistoricalDataCache, fetchHistoricalDataset } from './services/historicalDataService.js';
 import { renderSpreadsheetAdminPage } from './admin/components/SpreadsheetAdminPage.js';
 import { clearQuestionChart, renderQuestionChart } from './charts/chartRenderer.js';
@@ -44,8 +44,11 @@ const state = {
   municipio: '',
   escola: '',
   tecnico: '',
+  etapa: '',
+  modalidade: '',
   section: '',
   questionKey: '',
+  response: '',
   drillAnswer: ''
 };
 
@@ -71,6 +74,7 @@ async function loadData() {
   const result = await fetchResponsesForPeriod(selectedSpreadsheet());
   clearAnalysisCache();
   rows = result.rows;
+  if (!rows.length) throw new Error('A planilha selecionada esta vazia ou nao possui registros validos.');
   updatedAt = result.updatedAt;
   questions = result.questions?.length ? result.questions : detectQuestions(rows);
 
@@ -125,8 +129,11 @@ function resetDataFilters() {
   state.municipio = '';
   state.escola = '';
   state.tecnico = '';
+  state.etapa = '';
+  state.modalidade = '';
   state.section = '';
   state.questionKey = '';
+  state.response = '';
   state.drillAnswer = '';
 }
 
@@ -140,8 +147,11 @@ function clearDashboardFilters() {
   state.municipio = '';
   state.escola = '';
   state.tecnico = '';
+  state.etapa = '';
+  state.modalidade = '';
   state.section = '';
   state.questionKey = questions[0]?.key ?? '';
+  state.response = '';
   state.drillAnswer = '';
   renderDashboard();
   showStatus('Filtros limpos. Periodo selecionado mantido.', 'success');
@@ -224,10 +234,12 @@ async function updateState(key, value) {
     const firstQuestion = questions.find((question) => !value || question.section === value);
     state.questionKey = firstQuestion?.key ?? '';
     state.drillAnswer = '';
+    state.response = '';
   }
 
   if (key === 'questionKey') {
     state.drillAnswer = '';
+    state.response = '';
   }
 
   if (key === 'year' || key === 'month') {
@@ -286,6 +298,9 @@ function renderHistoricalDashboard() {
     state.municipio,
     state.escola,
     state.tecnico,
+    state.etapa,
+    state.modalidade,
+    state.response,
     historicalControls
   );
   currentHistoricalAnalysis = getCachedCalculation(historyKey, () => buildHistoricalAnalysis(historicalDataset, state, historicalControls));
@@ -408,7 +423,11 @@ function renderQuestionAnalysis(filteredRows) {
 }
 
 function renderDashboard() {
-  const filterKey = createCacheKey('filtered-rows', updatedAt, rows.length, state.year, state.month, state.dre, state.municipio, state.escola, state.tecnico);
+  const filterKey = createCacheKey(
+    'filtered-rows', updatedAt, rows.length, state.year, state.month,
+    state.dre, state.municipio, state.escola, state.tecnico,
+    state.etapa, state.modalidade, state.questionKey, state.response
+  );
   const filteredRows = getCachedCalculation(filterKey, () => applyFilters(rows, state));
   const question = questions.find((item) => item.key === state.questionKey) ?? questions[0] ?? null;
   const indicatorsKey = createCacheKey('smart-indicators', updatedAt, filteredRows.length, questions.length, state);
@@ -481,6 +500,8 @@ async function startDashboard() {
   });
 
   try {
+    showStatus('Verificando conexao com a API oficial...', 'info');
+    await checkDataSource();
     showStatus('Localizando planilhas na pasta oficial...', 'info');
     await loadCatalog();
     await reloadDashboardData();

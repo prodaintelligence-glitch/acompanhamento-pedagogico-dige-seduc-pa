@@ -162,6 +162,8 @@ test('le por ID oficial e consolida registros com metadados de origem', async ()
   const consolidated = context.buildAllData({ refresh: '1' });
   assert.equal(consolidated.spreadsheetCount, 1);
   assert.equal(consolidated.count, 1);
+  assert.equal(consolidated.spreadsheets[0].questions.length, 0);
+  assert.deepEqual(Array.from(consolidated.spreadsheets[0].headers), ['dre', 'municipio', 'escola']);
   assert.equal(consolidated.rows[0].sourceSpreadsheetId, file.getId());
   assert.match(cachedValue.key, /^ap-all-data-v1-/);
 });

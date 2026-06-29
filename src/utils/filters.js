@@ -4,6 +4,11 @@
 
 export function applyFilters(rows, filters) {
   return rows.filter((row) => {
-    return ['dre', 'municipio', 'escola', 'tecnico'].every((field) => !filters[field] || row[field] === filters[field]);
+    const institutionalMatch = ['dre', 'municipio', 'escola', 'tecnico', 'etapa', 'modalidade']
+      .every((field) => !filters[field] || row[field] === filters[field]);
+    const responseMatch = !filters.response
+      || !filters.questionKey
+      || String(row[filters.questionKey] ?? '') === String(filters.response);
+    return institutionalMatch && responseMatch;
   });
 }

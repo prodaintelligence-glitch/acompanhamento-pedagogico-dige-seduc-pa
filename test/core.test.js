@@ -24,12 +24,22 @@ test('reconhece respostas booleanas com e sem acento', () => {
 
 test('aplica filtros combinados e ordena opcoes unicas', () => {
   const rows = [
-    { dre: 'DRE 2', municipio: 'Marabá', escola: 'B' },
-    { dre: 'DRE 1', municipio: 'Belém', escola: 'A' },
-    { dre: 'DRE 1', municipio: 'Belém', escola: 'C' }
+    { dre: 'DRE 2', municipio: 'Marabá', escola: 'B', etapa: 'Medio', modalidade: 'Regular', q: 'Nao' },
+    { dre: 'DRE 1', municipio: 'Belém', escola: 'A', etapa: 'Fundamental', modalidade: 'Regular', q: 'Sim' },
+    { dre: 'DRE 1', municipio: 'Belém', escola: 'C', etapa: 'Fundamental', modalidade: 'EJA', q: 'Nao' }
   ];
   assert.equal(applyFilters(rows, { dre: 'DRE 1', municipio: 'Belém' }).length, 2);
+  assert.equal(applyFilters(rows, { etapa: 'Fundamental', modalidade: 'EJA' }).length, 1);
+  assert.equal(applyFilters(rows, { questionKey: 'q', response: 'Sim' }).length, 1);
   assert.deepEqual(getUniqueOptions(rows, 'dre'), ['DRE 1', 'DRE 2']);
+});
+
+test('normaliza etapa, modalidade e tecnico recebidos da API', () => {
+  const rows = normalizeRows(
+    ['Etapa/Modalidade', 'Modalidade de ensino', 'Tecnico responsavel'],
+    [['Ensino medio', 'Regular', 'Maria']]
+  );
+  assert.deepEqual(rows, [{ etapa: 'Ensino medio', modalidade: 'Regular', tecnico: 'Maria' }]);
 });
 
 test('reutiliza calculos em cache ate a limpeza explicita', () => {

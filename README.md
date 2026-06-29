@@ -4,7 +4,7 @@ Aplicacao web para analise mensal das respostas do formulario de Acompanhamento 
 
 ## Objetivo
 
-Centralizar a leitura das respostas mensais, permitindo que gestores acompanhem indicadores, filtrem dados por territorio/escola, analisem perguntas, executem drill-down e gerem relatorios a partir de dados mockados ou do catalogo automatico do Google Drive via Google Apps Script.
+Centralizar a leitura das respostas mensais, permitindo que gestores acompanhem indicadores, filtrem dados por territorio/escola, analisem perguntas, executem drill-down e gerem relatorios a partir da API oficial do Google Apps Script.
 
 A arquitetura obrigatoria e suas regras de evolucao estao em `docs/official-architecture.md`.
 
@@ -26,9 +26,9 @@ src/
   auth/         barreira local de acesso
   charts/       graficos mensais e historicos
   components/   interface e estados visuais
-  config/       configuracao do frontend e mock
+  config/       configuracao do frontend
   reports/      Excel, PDF e impressao
-  services/     mock, Apps Script e dados historicos
+  services/     API oficial, mock de desenvolvimento e dados historicos
   utils/        normalizacao, filtros, cache e estatisticas
 apps-script/    API e descoberta automatica no Google Drive
 docs/           implantacao, integracao e homologacao
@@ -59,14 +59,14 @@ Credenciais locais:
 Copie `.env.example` para `.env` e ajuste os valores locais:
 
 ```text
-VITE_USE_MOCK_DATA=true
+VITE_USE_MOCK_DATA=false
 VITE_GOOGLE_APPS_SCRIPT_URL=INSERIR_URL_DO_WEB_APP_AQUI
 VITE_ENABLE_DEBUG_LOGS=false
 VITE_ADMIN_USERNAME=admin
 VITE_ADMIN_PASSWORD=SUBSTITUIR_POR_UMA_SENHA_FORTE
 ```
 
-Use mock local:
+Opcionalmente, use mock somente no servidor local `npm run dev`:
 
 ```text
 VITE_USE_MOCK_DATA=true
@@ -204,7 +204,7 @@ dist
 
 ## Dados mockados e dados reais
 
-O mock local continua disponivel para desenvolvimento. Em producao, configure `VITE_USE_MOCK_DATA=false` e informe a URL real do Google Apps Script. Se a API real falhar, a aplicacao exibe erro amigavel e nao troca silenciosamente para mock.
+O mock permanece isolado para desenvolvimento local. Builds de producao ignoram o modo mock e usam exclusivamente `VITE_GOOGLE_APPS_SCRIPT_URL`. Se a API real falhar, a aplicacao exibe erro amigavel e nao troca silenciosamente de fonte.
 
 ## Homologacao da versao 1.0
 

@@ -54,3 +54,17 @@ test('mantem somente dependencias coerentes com o frontend Vite', async () => {
   assert.doesNotMatch(dependencies, bannedDatabases);
   assert.equal(pkg.scripts['verify:architecture'], 'node --test test/architecture.test.js');
 });
+
+test('usa API real em producao e isola mocks no desenvolvimento', async () => {
+  const appConfig = await readFile(path.join(root, 'src', 'config', 'appConfig.js'), 'utf8');
+  const dataService = await readFile(path.join(root, 'src', 'services', 'dataService.js'), 'utf8');
+  const apiService = await readFile(path.join(root, 'src', 'services', 'googleApiService.js'), 'utf8');
+
+  assert.match(appConfig, /import\.meta\.env\.DEV\s*&&\s*import\.meta\.env\.VITE_USE_MOCK_DATA === 'true'/);
+  assert.doesNotMatch(appConfig, /VITE_GOOGLE_APPS_SCRIPT_ENDPOINT/);
+  assert.doesNotMatch(dataService, /^import .*mockService/m);
+  assert.match(dataService, /import\.meta\.env\.DEV\s*\?\s*\(\)\s*=>\s*import\('\.\/mockService\.js'\)/);
+  ['healthcheck', 'listSpreadsheets', 'getSpreadsheetData', 'getAllData'].forEach((name) => {
+    assert.match(apiService, new RegExp(`export function ${name}\\b`));
+  });
+});

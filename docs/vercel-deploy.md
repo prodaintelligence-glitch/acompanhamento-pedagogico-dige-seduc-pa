@@ -30,17 +30,8 @@ VITE_ADMIN_USERNAME=admin
 VITE_ADMIN_PASSWORD=SUBSTITUIR_POR_UMA_SENHA_FORTE
 ```
 
-Para um deploy de homologacao com dados mockados:
-
-```text
-VITE_USE_MOCK_DATA=true
-VITE_GOOGLE_APPS_SCRIPT_URL=
-VITE_ENABLE_DEBUG_LOGS=false
-VITE_ADMIN_USERNAME=admin
-VITE_ADMIN_PASSWORD=SUBSTITUIR_POR_UMA_SENHA_FORTE
-```
-
 Nao coloque endpoint real em arquivos versionados. Use variaveis da Vercel.
+O build de producao desativa mocks mesmo que `VITE_USE_MOCK_DATA=true` seja informado por engano.
 
 ## 4. Executar deploy
 
@@ -73,6 +64,6 @@ Checklist minimo:
 
 - `src/config/spreadsheets.json` e usado apenas pelo modo mock.
 - Em producao, o Apps Script gera o catalogo diretamente a partir da pasta oficial.
-- IDs da pasta e das planilhas nao fazem parte do contrato enviado ao frontend.
+- O ID de cada planilha faz parte do catalogo porque `getSpreadsheetData` o utiliza; o ID da pasta permanece apenas no Apps Script.
 - Excel e PDF sao carregados sob demanda para manter o pacote inicial abaixo do limite de aviso do Vite.
 - O login local e uma barreira de interface. A protecao dos dados deve continuar sendo garantida pelas permissoes do Google Drive e pelo acesso ao Web App do Apps Script.

@@ -12,7 +12,10 @@ function appliedFilters(state, question) {
     Municipio: state.municipio || 'Todos',
     Escola: state.escola || 'Todas',
     Tecnico: state.tecnico || 'Todos',
+    Etapa: state.etapa || 'Todas',
+    Modalidade: state.modalidade || 'Todas',
     Eixo: state.section || 'Todos',
+    Resposta: state.response || 'Todas',
     Pergunta: question ? `${question.code} - ${question.title}` : 'Todas'
   };
 }

@@ -119,7 +119,7 @@ A aba e escolhida nesta ordem: nome configurado, primeira aba com cabecalho vali
 
 Campos institucionais conhecidos sao normalizados, por exemplo `DRE -> dre`, `Municipio -> municipio` e `Nome da Escola -> escola`. Os demais cabecalhos usam camelCase sem acentos ou caracteres especiais; duplicados recebem sufixos numericos e colunas sem nome viram `colunaN`. O texto original das perguntas permanece no catalogo para manter rastreabilidade.
 
-No `getAllData`, cada linha recebe `sourceSpreadsheetId`, `sourceSpreadsheetName`, `sourceMonth`, `sourceYear` e `sourceSheetName`. Mes e ano ficam nulos quando nao puderem ser inferidos do nome. O retorno tambem informa `spreadsheetCount`, `count`, planilhas lidas e eventuais erros isolados; um arquivo invalido nao interrompe a leitura dos demais.
+No `getAllData`, cada linha recebe `sourceSpreadsheetId`, `sourceSpreadsheetName`, `sourceMonth`, `sourceYear` e `sourceSheetName`. Mes e ano ficam nulos quando nao puderem ser inferidos do nome. A metadata de cada planilha inclui seus cabecalhos e perguntas para permitir analises historicas sem novas leituras. O retorno tambem informa `spreadsheetCount`, `count`, planilhas lidas e eventuais erros isolados; um arquivo invalido nao interrompe a leitura dos demais.
 
 ## Cache
 

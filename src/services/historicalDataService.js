@@ -1,44 +1,52 @@
-import { fetchResponsesForPeriod } from './dataService.js';
+import { fetchAllResponses } from './dataService.js';
+import { detectQuestions } from '../utils/detectQuestions.js';
 
-const periodCache = new Map();
-
-function cacheKey(period) {
-  return `${period.periodKey || period.id}:${period.updatedAt || ''}`;
-}
+let consolidatedCache = null;
 
 export function clearHistoricalDataCache() {
-  periodCache.clear();
+  consolidatedCache = null;
+}
+
+function rowsForPeriod(rows, period) {
+  const spreadsheetId = period.spreadsheetId || period.fileId;
+  return rows.filter((row) => {
+    if (spreadsheetId && row.sourceSpreadsheetId) return row.sourceSpreadsheetId === spreadsheetId;
+    return Number(row.sourceYear) === Number(period.year)
+      && String(row.sourceMonth || '').toLowerCase() === String(period.month || '').toLowerCase();
+  });
+}
+
+function metadataForPeriod(spreadsheets, period) {
+  const spreadsheetId = period.spreadsheetId || period.fileId;
+  return (spreadsheets || []).find((item) => item.sourceSpreadsheetId === spreadsheetId) || null;
 }
 
 export async function fetchHistoricalDataset(periods, { force = false } = {}) {
   if (force) clearHistoricalDataCache();
-  const ordered = [...periods]
-    .filter((period) => period.active !== false)
-    .sort((a, b) => String(a.periodKey || a.id).localeCompare(String(b.periodKey || b.id)));
-  const results = [];
+  if (!consolidatedCache) consolidatedCache = await fetchAllResponses({ refresh: force });
 
-  for (let offset = 0; offset < ordered.length; offset += 3) {
-    const batch = ordered.slice(offset, offset + 3);
-    const loaded = await Promise.all(batch.map(async (period) => {
-      const key = cacheKey(period);
-      if (periodCache.has(key)) return periodCache.get(key);
-      try {
-        const payload = await fetchResponsesForPeriod(period);
-        const item = {
+  return [...periods]
+    .filter((period) => period.active !== false)
+    .sort((a, b) => String(a.periodKey || a.id).localeCompare(String(b.periodKey || b.id)))
+    .map((period) => {
+      const periodRows = rowsForPeriod(consolidatedCache.rows, period);
+      const metadata = metadataForPeriod(consolidatedCache.spreadsheets, period);
+      if (!periodRows.length) {
+        return {
           period,
-          rows: payload.rows,
-          questions: payload.questions,
-          indicators: payload.indicators ?? [],
-          updatedAt: payload.updatedAt,
-          error: ''
+          rows: [],
+          questions: [],
+          indicators: [],
+          error: 'Nenhum registro consolidado foi encontrado para este periodo.'
         };
-        periodCache.set(key, item);
-        return item;
-      } catch (error) {
-        return { period, rows: [], questions: [], indicators: [], error: error.message || 'Erro de leitura.' };
       }
-    }));
-    results.push(...loaded);
-  }
-  return results;
+      return {
+        period,
+        rows: periodRows,
+        questions: metadata?.questions?.length ? metadata.questions : detectQuestions(periodRows),
+        indicators: [],
+        updatedAt: metadata?.updatedAt || consolidatedCache.updatedAt,
+        error: ''
+      };
+    });
 }

@@ -123,13 +123,15 @@ export function clearGoogleApiCache() {
   responseCache.clear();
 }
 
-export function healthcheck() {
-  return requestGoogleApi('healthcheck');
+export function healthcheck(options = {}) {
+  return requestGoogleApi('healthcheck', {}, options);
 }
 
-export function fetchPeriodCatalog({ refresh = false } = {}) {
+export function listSpreadsheets({ refresh = false } = {}) {
   return requestGoogleApi('listSpreadsheets', {}, { refresh });
 }
+
+export const fetchPeriodCatalog = listSpreadsheets;
 
 export function fetchGoogleSheetResponses({ periodKey, id }, { refresh = false } = {}) {
   const period = periodKey || id;
@@ -141,13 +143,16 @@ export function fetchSpreadsheetData(period, options = {}) {
   return requestGoogleApi('getSpreadsheetData', { period }, options);
 }
 
-export function fetchSpreadsheetDataById(spreadsheetId, options = {}) {
+export function getSpreadsheetData(spreadsheetId, options = {}) {
   return requestGoogleApi('getSpreadsheetData', { spreadsheetId }, options);
 }
 
-export function fetchAllSpreadsheetData(options = {}) {
+export function getAllData(options = {}) {
   return requestGoogleApi('getAllData', {}, options);
 }
+
+export const fetchSpreadsheetDataById = getSpreadsheetData;
+export const fetchAllSpreadsheetData = getAllData;
 
 export function fetchQuestionCatalog({ refresh = false } = {}) {
   return requestGoogleApi('getIndicators', {}, { refresh });

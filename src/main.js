@@ -516,8 +516,8 @@ async function startDashboard() {
 }
 
 function startLogin() {
-  renderLogin(app, (username, password) => {
-    const success = login(username, password);
+  renderLogin(app, async (username, password) => {
+    const success = await login(username, password);
     if (success) startDashboard();
     return success;
   });

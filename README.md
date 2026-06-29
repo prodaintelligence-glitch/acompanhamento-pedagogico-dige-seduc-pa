@@ -49,10 +49,12 @@ npm install
 npm run dev
 ```
 
-Credenciais locais:
+Credencial administrativa local:
 
 - Usuario: `admin`
 - Senha: `dige2026`
+
+O acesso individual aceita e-mail institucional ou matricula no mesmo campo. Identificadores e senhas individuais nao sao versionados em texto aberto; apenas seus hashes ficam no cadastro local de acesso.
 
 ## Variaveis de ambiente
 

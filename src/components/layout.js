@@ -41,7 +41,7 @@ export function renderLogin(container, onSubmit) {
         <h1>Acompanhamento Pedagogico</h1>
         <p>Entre para acessar o painel mensal de analise das respostas.</p>
         <form id="login-form" class="login-form">
-          <label>Usuario<input name="username" autocomplete="username" required /></label>
+          <label>E-mail ou matricula<input name="username" autocomplete="username" required /></label>
           <label>Senha<input name="password" type="password" autocomplete="current-password" required /></label>
           <button type="submit">Entrar</button>
           <span id="login-error" class="form-error" role="alert" aria-live="polite" hidden>Usuario ou senha invalidos.</span>
@@ -52,11 +52,14 @@ export function renderLogin(container, onSubmit) {
   createIcons({ icons: { BarChart3, Moon, Sun } });
   bindThemeButtons(container);
 
-  container.querySelector('#login-form').addEventListener('submit', (event) => {
+  container.querySelector('#login-form').addEventListener('submit', async (event) => {
     event.preventDefault();
+    const button = event.currentTarget.querySelector('button[type="submit"]');
+    button.disabled = true;
     const data = new FormData(event.currentTarget);
-    const success = onSubmit(data.get('username'), data.get('password'));
+    const success = await onSubmit(data.get('username'), data.get('password'));
     container.querySelector('#login-error').hidden = success;
+    button.disabled = false;
   });
 }
 

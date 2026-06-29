@@ -6,6 +6,8 @@ Aplicacao web para analise mensal das respostas do formulario de Acompanhamento 
 
 Centralizar a leitura das respostas mensais, permitindo que gestores acompanhem indicadores, filtrem dados por territorio/escola, analisem perguntas, executem drill-down e gerem relatorios a partir de dados mockados ou do catalogo automatico do Google Drive via Google Apps Script.
 
+A arquitetura obrigatoria e suas regras de evolucao estao em `docs/official-architecture.md`.
+
 ## Tecnologias
 
 - Vite
@@ -31,6 +33,8 @@ src/
 apps-script/    API e descoberta automatica no Google Drive
 docs/           implantacao, integracao e homologacao
 test/           testes unitarios essenciais
+.clasp.json     vinculo com o projeto Apps Script existente
+.claspignore    controle dos arquivos enviados pelo clasp
 ```
 
 ## Instalar
@@ -97,7 +101,22 @@ Documentacao detalhada:
 docs/google-apps-script.md
 docs/question-catalog.md
 docs/historical-analytics.md
+docs/clasp-workflow.md
 ```
+
+## Sincronizacao do Apps Script
+
+O projeto esta vinculado ao Script ID existente por `.clasp.json`. Depois de autenticar com `npx clasp login`, utilize:
+
+```bash
+npm run gas:status
+npm run gas:push
+npm run gas:pull
+npm run gas:open
+npm run gas:deploy
+```
+
+`gas:deploy` atualiza o deployment existente e preserva a URL atual do Web App.
 
 ## Planilhas mensais
 

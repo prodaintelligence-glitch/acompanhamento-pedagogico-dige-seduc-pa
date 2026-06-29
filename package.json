@@ -7,7 +7,13 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "node --test"
+    "test": "node --test",
+    "verify:architecture": "node --test test/architecture.test.js",
+    "gas:status": "clasp show-file-status",
+    "gas:push": "clasp push",
+    "gas:pull": "clasp pull",
+    "gas:open": "clasp open-script",
+    "gas:deploy": "clasp update-deployment AKfycbwqqadAHkgC4duTenXKXW6YagX8-tbFV8LLUOzX3CstCzj2yytsHLW3ByCvZ2-wYBGLPg --description \"Atualizacao via clasp\""
   },
   "dependencies": {
     "chart.js": "latest",
@@ -16,6 +22,7 @@
     "lucide": "latest"
   },
   "devDependencies": {
+    "@google/clasp": "^3.3.0",
     "vite": "latest"
   }
 }

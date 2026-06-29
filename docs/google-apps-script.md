@@ -33,14 +33,16 @@ O ID fica centralizado em `apps-script/Config.gs` pela constante `DRIVE_FOLDER_I
 
 ## Publicacao
 
-1. Crie um projeto no Google Apps Script.
-2. Crie todos os arquivos `.gs` existentes em `apps-script/`.
-3. Copie o conteudo dos arquivos locais para os correspondentes no editor.
-4. Confirme o `DRIVE_FOLDER_ID` em `Config.gs`.
-5. Implante como Aplicativo da Web, executando como o proprietario.
-6. Conceda acesso ao Drive e Sheets e restrinja os usuarios conforme a politica institucional.
-7. Copie a URL terminada em `/exec`.
-8. Configure na Vercel:
+O fluxo oficial de sincronizacao utiliza `clasp`; consulte `docs/clasp-workflow.md`.
+
+1. Execute `npx clasp login` com a conta autorizada.
+2. Confirme os arquivos com `npm run gas:status`.
+3. Envie os fontes com `npm run gas:push`.
+4. Atualize o deployment existente com `npm run gas:deploy`.
+5. Confirme o `DRIVE_FOLDER_ID` em `Config.gs`.
+6. Configure na Vercel:
+
+Se o Google retornar `Insufficient Permission`, confirme a edicao do Script ID, habilite a Apps Script API em `script.google.com/home/usersettings` e renove o login. O roteiro detalhado esta em `docs/clasp-workflow.md`.
 
 ```text
 VITE_USE_MOCK_DATA=false

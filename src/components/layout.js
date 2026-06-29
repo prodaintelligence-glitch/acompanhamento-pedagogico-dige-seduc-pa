@@ -1,4 +1,4 @@
-import { createIcons, BarChart3, FileDown, LogOut, Moon, Search, Sun, Table2 } from 'lucide';
+import { createIcons, BarChart3, Eye, EyeOff, FileDown, LogOut, Moon, Search, Sun, Table2 } from 'lucide';
 import { getTheme, toggleTheme } from '../utils/theme.js';
 
 function themeButtonMarkup(extraClass = '') {
@@ -42,15 +42,34 @@ export function renderLogin(container, onSubmit) {
         <p>Entre para acessar o painel mensal de analise das respostas.</p>
         <form id="login-form" class="login-form">
           <label>E-mail ou matricula<input name="username" autocomplete="username" required /></label>
-          <label>Senha<input name="password" type="password" autocomplete="current-password" required /></label>
+          <label>
+            Senha
+            <span class="password-field">
+              <input name="password" type="password" autocomplete="current-password" required />
+              <button type="button" class="password-toggle" aria-label="Visualizar senha" title="Visualizar senha">
+                <i class="password-icon password-icon-show" data-lucide="eye"></i>
+                <i class="password-icon password-icon-hide" data-lucide="eye-off"></i>
+              </button>
+            </span>
+          </label>
           <button type="submit">Entrar</button>
           <span id="login-error" class="form-error" role="alert" aria-live="polite" hidden>Usuario ou senha invalidos.</span>
         </form>
       </section>
     </main>
   `;
-  createIcons({ icons: { BarChart3, Moon, Sun } });
+  createIcons({ icons: { BarChart3, Eye, EyeOff, Moon, Sun } });
   bindThemeButtons(container);
+
+  const passwordInput = container.querySelector('input[name="password"]');
+  const passwordToggle = container.querySelector('.password-toggle');
+  passwordToggle.addEventListener('click', () => {
+    const shouldShowPassword = passwordInput.type === 'password';
+    passwordInput.type = shouldShowPassword ? 'text' : 'password';
+    passwordToggle.classList.toggle('is-visible', shouldShowPassword);
+    passwordToggle.setAttribute('aria-label', shouldShowPassword ? 'Ocultar senha' : 'Visualizar senha');
+    passwordToggle.title = shouldShowPassword ? 'Ocultar senha' : 'Visualizar senha';
+  });
 
   container.querySelector('#login-form').addEventListener('submit', async (event) => {
     event.preventDefault();
